@@ -100,6 +100,15 @@ Determines whether the workflow should:
 - End execution, or Loop back to the Supervisor for refinement
 - Decision is based on state["needs_refinement"].
 
-
-
-
+### 🔄 Tool Execution Loop (Example)
+```python
+If:
+active_tools = ["pubmed", "arxiv", "web"]
+Execution order will be:
+query_gen_agent
+ → pubmed_search
+ → arxiv_search
+ → web_search
+ → retrieve_data
+Only selected tools are executed, in a controlled order.
+```
