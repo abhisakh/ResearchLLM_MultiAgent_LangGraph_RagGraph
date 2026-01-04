@@ -62,7 +62,8 @@ The system is designed as a state machine that coordinates planning, tool execut
 
 
 ```
-``````mermaid
+
+```mermaid
 
 flowchart TD
     %% Entry
@@ -128,8 +129,8 @@ flowchart TD
     Evaluation -->|needs refinement| Supervisor
     Evaluation -->|acceptable| End
 
-```mermeid
 ```
+
 ### 🧩 Core Concept
 **1.** Shared State (ResearchState)
 - All agents operate on a shared memory object called ResearchState.
