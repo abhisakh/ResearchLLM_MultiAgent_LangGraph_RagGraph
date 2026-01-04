@@ -332,7 +332,105 @@ This design is safe across OpenAI, Claude, Gemini, and other LLMs.
 - Ensures at least one placeholder chunk exists if retrieval fails
 
 
+## 🔹 RAGAgent
+```mermaid
+flowchart TD
+    RawData[Raw Tool Data]
+    Retrieval[Retrieval Agent]
 
+    PDFCheck{PDF URL Available}
+    Download[Download PDF]
+    Extract[Extract Text]
+    ChunkPDF[Semantic Chunking PDF]
+
+    Fallback[Abstract Chunking]
+
+    Chunks[Full Text Chunks]
+
+    RAG[RAG Agent]
+
+    Structured[Structured Data]
+    Index[Vector Index]
+    Search[Vector Search]
+    Expand[Neighbor Expansion]
+    Filter[Filter and Deduplicate]
+    FallbackRAG[RAG Fallback]
+
+    Context[Filtered Context]
+    Done[RAG Complete]
+
+    RawData --> Retrieval
+    Retrieval --> PDFCheck
+
+    PDFCheck -->|Yes| Download
+    Download --> Extract
+    Extract --> ChunkPDF
+    ChunkPDF --> Chunks
+
+    PDFCheck -->|No| Fallback
+    Fallback --> Chunks
+
+    Chunks --> RAG
+
+    RAG --> Structured
+    RAG --> Index
+    Index --> Search
+    Search --> Expand
+    Expand --> Filter
+
+    Filter -->|Keep| Context
+    Filter -->|Empty| FallbackRAG
+    FallbackRAG --> Context
+
+    Context --> Done
+
+```
+
+**Purpose**
+The RAGAgent filters and compresses retrieved content into a high-signal context window for synthesis, combining vector similarity, neighbor expansion, and keyword gating.
+
+**Key Responsibilities**
+- Index text chunks into a vector database
+- Perform semantic vector search
+- Expand context via neighboring chunks
+- Preserve structured (non-vector) data
+- Deduplicate and filter noise
+- Assemble the final RAG context
+
+**Inputs (from ResearchState)**
+| Field              | Type                   | Description                                           |
+| ------------------ | ---------------------- | ----------------------------------------------------- |
+| `semantic_query`   | `str`                  | Query used for vector search                          |
+| `api_search_term`  | `str`                  | Literal term used for keyword gating                  |
+| `full_text_chunks` | `List[Dict[str, Any]]` | Chunked documents                                     |
+| `raw_tool_data`    | `List[Dict[str, Any]]` | Includes structured data (e.g., materials properties) |
+
+**Outputs (written to ResearchState)**
+| Field              | Type   | Description                       |
+| ------------------ | ------ | --------------------------------- |
+| `filtered_context` | `str`  | Final context passed to synthesis |
+| `rag_complete`     | `bool` | Indicates RAG stage completion    |
+
+
+### RAG Processing Stages
+1. Structured Context Preservation
+    - Keeps non-textual, high-value data (e.g., materials properties)
+    - Bypasses vector filtering
+2. Vector Indexing
+    - All valid chunks are indexed into the vector database
+    - Index persists across refinement loops
+3. Semantic Vector Search
+    - Top-K similarity search (k = 8)
+    - Distance-based thresholding
+4. Neighbor Expansion
+    - Expands results to adjacent chunks
+    - Preserves local document context
+5. Filtering & Deduplication
+    - Keyword gating to remove academic boilerplate
+    - Chunk-level deduplication
+    - Hard cap on maximum chunks retained
+6. Fallback Strategy
+    - If filtering removes everything, raw chunks are used as backup
 
 
 
