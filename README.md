@@ -16,6 +16,7 @@ It is implemented as a TypedDict to provide structure, clarity, and type safety.
 
 ### 🔹 State Categories
 The state is logically grouped into six categories:
+
 **1️⃣ User Input & Planning**
 
 | Field            | Description                                             |
