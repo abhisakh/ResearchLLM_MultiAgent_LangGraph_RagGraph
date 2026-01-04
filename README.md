@@ -2,7 +2,7 @@
 
 ## 📖 Contents
 
-- [🧠 ResearchState (Shared Workflow State)](#-researchstate-shared-workflow-state)
+- [🧠 ResearchState (Shared Workflow State)]
   - [State Categories](#-state-categories)
     - [User Input & Planning](#1️⃣-user-input--planning)
     - [Constraints & Query Structure](#2️⃣-constraints--query-structure)
