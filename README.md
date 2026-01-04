@@ -38,7 +38,7 @@
 
 
 ---
-## [🧠 ResearchState (Shared Workflow State)] (#-researchstate-shared-workflow-state)
+## [🧠 ResearchState (Shared Workflow State)]
 
 ResearchState is the central shared memory used by all agents in the LangGraph workflow.
 Each agent reads from and writes to this state to coordinate planning, tool execution, retrieval, synthesis, and evaluation.
