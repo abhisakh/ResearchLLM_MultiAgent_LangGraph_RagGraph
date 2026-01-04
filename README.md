@@ -274,3 +274,69 @@ Supervisor-controlled orchestration
 - Evaluation and refinement
 - The result is a transparent, debuggable, and scalable multi-agent system.
 
+---
+
+
+---
+
+## 📚 Retrieval & RAG Pipeline
+
+This project uses a two-stage Retrieval-Augmented Generation (RAG) pipeline designed to be model-agnostic, scalable, and robust to heterogeneous data sources.
+The pipeline consists of:
+- RetrievalAgent – document downloading, text extraction, and semantic chunking
+- RAGAgent – vector search, contextual expansion, filtering, and final context assembly
+
+### 🔹 RetrievalAgent
+**Purpose**
+The RetrievalAgent is responsible for converting raw tool outputs (PDFs, abstracts, snippets) into structured, semantically meaningful text chunks suitable for vector-based retrieval.
+
+**Key Responsibilities**
+- Download PDFs from tool outputs (e.g., Arxiv, PubMed)
+- Extract full text from PDFs
+- Perform semantic-first text chunking
+- Provide fallback chunking for non-PDF sources
+- Populate state["full_text_chunks"]
+
+**Inputs (from ResearchState)**
+| Field           | Type                   | Description                             |
+| --------------- | ---------------------- | --------------------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Aggregated outputs from all tool agents |
+
+**Outputs (written to ResearchState)**
+| Field              | Type                   | Description                            |
+| ------------------ | ---------------------- | -------------------------------------- |
+| `full_text_chunks` | `List[Dict[str, Any]]` | Structured, chunked text with metadata |
+
+Each chunk contains:
+```python
+{
+  "chunk_id": "tool_doc_hash_index",
+  "doc_id": "source_url",
+  "chunk_index": 0,
+  "text": "...",
+  "source": "tool_id",
+  "url": "source_url"
+}
+
+```
+**Chunking Strategy**
+Sentence-aware semantic chunking
+- Dynamic character limits (token-safe for most LLMs)
+- Overlapping chunks for context continuity
+- Hard splits for oversized sentences
+This design is safe across OpenAI, Claude, Gemini, and other LLMs.
+
+**Failure Handling**
+- Gracefully skips failed PDF downloads
+- Falls back to abstracts/snippets when full text is unavailable
+- Ensures at least one placeholder chunk exists if retrieval fails
+
+
+
+
+
+
+
+
+
+
