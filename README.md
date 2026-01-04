@@ -38,7 +38,7 @@
 
 
 ---
-## [🧠 ResearchState (Shared Workflow State)]
+## 🧠 ResearchState (Shared Workflow State)
 
 ResearchState is the central shared memory used by all agents in the LangGraph workflow.
 Each agent reads from and writes to this state to coordinate planning, tool execution, retrieval, synthesis, and evaluation.
@@ -443,7 +443,7 @@ The RAGAgent filters and compresses retrieved content into a high-signal context
 | `rag_complete`     | `bool` | Indicates RAG stage completion    |
 
 
-### [RAG Processing Stages] (#rag-processing-stages)
+### RAG Processing Stages
 1. Structured Context Preservation
     - Keeps non-textual, high-value data (e.g., materials properties)
     - Bypasses vector filtering
