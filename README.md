@@ -8,25 +8,127 @@ The system is designed as a state machine that coordinates planning, tool execut
 
 ### 🔁 High-Level Execution Flow
 ```python
-Supervisor
-   ↓
-Clean Query Agent
-   ↓
-Intent Agent
-   ↓
-Planning Agent
-   ↓
-Query Generation Agent
-   ↓
-Tool Execution Loop
-   ↓
-Retrieval (RAG)
-   ↓
-Synthesis
-   ↓
-Evaluation
-   ↳ Refine (loop) OR End
+                ┌──────────────────┐
+                │   Supervisor     │
+                │   (Entry Point)  │
+                └────────┬─────────┘
+                         │
+                         ▼
+                ┌──────────────────┐
+                │ Clean Query Agent │
+                └────────┬─────────┘
+                         ▼
+                ┌──────────────────┐
+                │  Intent Agent    │
+                └────────┬─────────┘
+                         ▼
+                ┌──────────────────┐
+                │ Planning Agent   │
+                └────────┬─────────┘
+                         ▼
+                ┌──────────────────┐
+                │ Query Generation │
+                │      Agent       │
+                └────────┬─────────┘
+                         │
+           ┌─────────────┼─────────────┐
+           ▼             ▼             ▼
+     PubMed Search   Arxiv Search   OpenAlex Search
+           │             │             │
+           ▼             ▼             ▼
+     Materials Search ──► Web Search ──┘
+           │
+           ▼
+     ┌──────────────────┐
+     │  Retrieve Data   │
+     └────────┬─────────┘
+              ▼
+     ┌──────────────────┐
+     │   RAG Filter     │
+     └────────┬─────────┘
+              ▼
+     ┌──────────────────┐
+     │ Synthesis Agent  │
+     └────────┬─────────┘
+              ▼
+     ┌──────────────────┐
+     │ Evaluation Agent │
+     └───────┬────┬─────┘
+             │    │
+   needs_refine  acceptable
+             │    │
+             ▼    ▼
+        Supervisor  END
 
+
+```
+``````mermaid
+
+flowchart TD
+    %% Entry
+    Supervisor[Supervisor Agent<br/>Entry Point]
+
+    %% Planning Phase
+    Clean[Clean Query Agent]
+    Intent[Intent Agent]
+    Planning[Planning Agent]
+    QueryGen[Query Generation Agent]
+
+    %% Tool Nodes
+    PubMed[PubMed Search]
+    Arxiv[Arxiv Search]
+    OpenAlex[OpenAlex Search]
+    Materials[Materials Search]
+    Web[Web Search]
+
+    %% Retrieval & RAG
+    Retrieve[Retrieve Data]
+    RAG[RAG Filter]
+    Synthesis[Synthesis Agent]
+    Evaluation[Evaluation Agent]
+
+    %% End
+    End((END))
+
+    %% Main Flow
+    Supervisor -->|route_from_supervisor| Clean
+    Clean --> Intent
+    Intent --> Planning
+    Planning --> QueryGen
+
+    %% Tool Routing
+    QueryGen -->|route_to_tools| PubMed
+    QueryGen -->|route_to_tools| Arxiv
+    QueryGen -->|route_to_tools| OpenAlex
+    QueryGen -->|route_to_tools| Materials
+    QueryGen -->|route_to_tools| Web
+    QueryGen -->|No tools| Retrieve
+
+    %% Tool Loop (route_next_tool)
+    PubMed -->|next tool?| Arxiv
+    PubMed -->|done| Retrieve
+
+    Arxiv -->|next tool?| OpenAlex
+    Arxiv -->|done| Retrieve
+
+    OpenAlex -->|next tool?| Materials
+    OpenAlex -->|done| Retrieve
+
+    Materials -->|next tool?| Web
+    Materials -->|done| Retrieve
+
+    Web --> Retrieve
+
+    %% RAG & Finalization
+    Retrieve --> RAG
+    RAG --> Synthesis
+    Synthesis --> Evaluation
+
+    %% Evaluation Loop
+    Evaluation -->|needs refinement| Supervisor
+    Evaluation -->|acceptable| End
+
+```mermeid
 ```
 ### 🧩 Core Concept
 **1.** Shared State (ResearchState)
