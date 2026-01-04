@@ -1,5 +1,36 @@
 # Research Assistant MultiAgent Architectur
 
+## 📖 Contents
+
+- [🧠 ResearchState (Shared Workflow State)](#-researchstate-shared-workflow-state)
+  - [State Categories](#-state-categories)
+    - [User Input & Planning](#1️⃣-user-input--planning)
+    - [Constraints & Query Structure](#2️⃣-constraints--query-structure)
+    - [Tool Execution & Retrieval](#3️⃣-tool-execution--retrieval)
+    - [RAG Pipeline](#4️⃣-rag-pipeline)
+    - [Synthesis & Evaluation](#5️⃣-synthesis--evaluation)
+    - [Control & Routing](#6️⃣-control--routing)
+  - [State Lifecycle](#-state-lifecycle)
+
+- [🧠 LangGraph Architecture Overview](#-langgraph-architecture-overview)
+  - [High-Level Execution Flow](#-high-level-execution-flow)
+  - [Core Concept](#-core-concept)
+    - [Shared State](#1-shared-state-researchstate)
+    - [Nodes (Agents)](#2-nodes-agents)
+  - [Routing & Control Logic](#-routing--control-logic)
+    - [route_from_supervisor](#route_from_supervisor)
+    - [route_to_tools](#route_to_tools)
+    - [route_next_tool](#route_next_tool-tool-loop-controller)
+    - [route_after_evaluation](#route_after_evaluation)
+  - [Tool Execution Loop Example](#-tool-execution-loop-example)
+  - [Refinement Loop](#-refinement-loop)
+  - [Design Benefits](#-design-benefits)
+  - [Summary](#-summary)
+
+- [📚 Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
+  - [RetrievalAgent](#-retrievalagent)
+  - [RAGAgent](#-ragagent)
+  - [RAG Processing Stages](#rag-processing-stages)
 
 
 
@@ -7,7 +38,7 @@
 
 
 ---
-## 🧠 ResearchState (Shared Workflow State)
+## [🧠 ResearchState (Shared Workflow State)] (#-researchstate-shared-workflow-state)
 
 ResearchState is the central shared memory used by all agents in the LangGraph workflow.
 Each agent reads from and writes to this state to coordinate planning, tool execution, retrieval, synthesis, and evaluation.
