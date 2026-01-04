@@ -443,8 +443,7 @@ The RAGAgent filters and compresses retrieved content into a high-signal context
 | `rag_complete`     | `bool` | Indicates RAG stage completion    |
 
 
-### RAG Processing Stages 
-(#rag-processing-stages)
+### [RAG Processing Stages] (#rag-processing-stages)
 1. Structured Context Preservation
     - Keeps non-textual, high-value data (e.g., materials properties)
     - Bypasses vector filtering
