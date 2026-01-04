@@ -103,12 +103,25 @@ Determines whether the workflow should:
 ### 🔄 Tool Execution Loop (Example)
 ```python
 If:
+
 active_tools = ["pubmed", "arxiv", "web"]
+
 Execution order will be:
+
 query_gen_agent
  → pubmed_search
  → arxiv_search
  → web_search
  → retrieve_data
+
 Only selected tools are executed, in a controlled order.
 ```
+### 🧪 Refinement Loop
+After synthesis:
+The EvaluationAgent checks output quality -> If refinement is required -> Control returns to the Supervisor
+
+The Supervisor decides the next step
+- If acceptable:
+   - Execution terminates
+This allows iterative improvement without restarting the entire workflow.
+
