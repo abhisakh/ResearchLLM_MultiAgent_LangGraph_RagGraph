@@ -125,3 +125,19 @@ The Supervisor decides the next step
    - Execution terminates
 This allows iterative improvement without restarting the entire workflow.
 
+### ✅ Design Benefits
+Supervisor-controlled orchestration
+- Deterministic tool execution
+- Explicit, inspectable state
+- Safe refinement loops
+- Easy to extend with new tools or agents
+- Production-ready architecture
+
+### 🧠 Summary
+**This LangGraph architecture models research as a controlled, state-driven process, combining:**
+- Planning
+- Tool orchestration
+- Retrieval-augmented generation
+- Evaluation and refinement
+- The result is a transparent, debuggable, and scalable multi-agent system.
+
