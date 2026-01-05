@@ -32,6 +32,8 @@
     - [RetrievalAgent](#-retrievalagent)
     - [RAGAgent](#-ragagent)
     - [RAG Processing Stages](#rag-processing-stages)
+  - [🧠 SynthesisAgent](#-synthesisagent)
+    - [🎯 Purpose](#-purpose)
 
 
 
@@ -468,6 +470,56 @@ The RAGAgent filters and compresses retrieved content into a high-signal context
     - If filtering removes everything, raw chunks are used as backup
 
 ---
+
+## 🧠 SynthesisAgent
+
+The SynthesisAgent is responsible for generating the final scientific research report from the filtered RAG context and structured tool outputs.
+It supports both initial report generation and refinement rewrites, driven entirely by state flags set earlier in the workflow.
+
+This agent is LLM-driven, state-aware, citation-strict, and refinement-safe.
+
+### 🎯 Purpose
+The SynthesisAgent:
+- Converts filtered RAG context into a structured scientific report
+- Dynamically adapts report structure based on tool availability
+- Enforces strict citation grounding
+- Supports iterative refinement using evaluation feedback
+- Includes context relevance guardrails to prevent garbage-in-garbage-out (GIGO)
+
+### 🔌 Inputs (from ResearchState)
+| Field               | Type                   | Description                               |
+| ------------------- | ---------------------- | ----------------------------------------- |
+| `semantic_query`    | `str`                  | Normalized user query                     |
+| `execution_plan`    | `List[str]`            | High-level research plan                  |
+| `filtered_context`  | `str`                  | RAG-filtered synthesis context            |
+| `raw_tool_data`     | `List[Dict[str, Any]]` | Tool outputs (materials, literature, web) |
+| `references`        | `List[str]`            | Collected citation strings                |
+| `needs_refinement`  | `bool`                 | Indicates rewrite mode                    |
+| `refinement_reason` | `str`                  | Evaluation feedback                       |
+| `final_report`      | `str`                  | Previous report (for refinement)          |
+
+### 📤 Outputs (written to ResearchState)
+| Field              | Type   | Description                    |
+| ------------------ | ------ | ------------------------------ |
+| `final_report`     | `str`  | Generated or rewritten report  |
+| `report_generated` | `bool` | Report generation success flag |
+| `is_refining`      | `bool` | Indicates rewrite execution    |
+| `needs_refinement` | `bool` | Reset after synthesis          |
+| `next`             | `str`  | Routed back to `evaluation`    |
+
+### 🧩 Internal Responsibilities
+1️⃣ **Material Data Extraction**
+```python
+_extract_material_data()
+```
+- Extracts structured material properties from materials_agent
+- Determines whether a materials-focused or literature-focused report should be generated
+- Returns:
+  - Material summary text
+  - Target formula
+  - Boolean presence flag
+This drives dynamic report structure selection.
+
 
 
 
