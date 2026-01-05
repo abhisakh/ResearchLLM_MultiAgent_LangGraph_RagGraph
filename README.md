@@ -28,6 +28,7 @@
   - [Summary](#-summary)
 
 - [Detailed Overview of Each and Every Agent](#detailed-overview-of-each-and-every-agent)
+  - [CleanQueryAgent](#cleanqueryagent) 
   - [IntentAgent](#intentagent)
   - [PlanningAgent](#planningagent)
   - [QueryGenerationAgent](#querygenerationagent) 
@@ -378,7 +379,52 @@ Supervisor-controlled orchestration
 
 ---
 
-## IntentAgent
+## CleanQueryAgent
+**File:** `procedural_agent.py`  
+**Agent ID:** `clean_query_agent`
+
+### Purpose
+The **CleanQueryAgent** is responsible for **preprocessing the raw user query** and generating a normalized **semantic query**.  
+It ensures the query is clean, consistent, and suitable for downstream LLM-based agents such as `IntentAgent` and `PlanningAgent`.
+
+This agent operates **before all LLM-driven agents** and provides a stable starting point for the research workflow.
+
+### Inputs
+- `user_query` (string)  
+  Raw user-provided query from the initial request.
+
+### Outputs
+- `user_query` (string)  
+  Cleaned version of the original query.
+- `semantic_query` (string)  
+  Normalized semantic query used by downstream agents.
+
+Both fields are written back to `ResearchState`.
+
+### Responsibilities
+
+- Trim leading/trailing whitespace.
+- Collapse multiple spaces into a single space.
+- Remove non-semantic punctuation (`? ! ( ) [ ] " ' *`).
+- Normalize separators (e.g., replace `--` with space).
+- Generate a **semantic query** (currently identical to cleaned query, extensible for future NLP logic).
+
+### Execution Flow
+
+```mermaid
+flowchart TD
+    A[Receive ResearchState] --> B[Read user_query]
+    B --> C[Strip whitespace & normalize spaces]
+    C --> D[Remove non-semantic punctuation]
+    D --> E[Generate semantic_query]
+    E --> F[Update ResearchState:
+    - user_query
+    - semantic_query]
+    F --> G[Return Updated ResearchState]
+```
+---
+
+# IntentAgent
 
 **Purpose:**  
 Determines the primary intent of the user query and extracts structured constraints. Outputs to `ResearchState`.
