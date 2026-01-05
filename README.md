@@ -1,4 +1,5 @@
-# Research Assistant MultiAgent Architecture
+# 🔬 Advanced Multi-Agent Research Framework
+<img width="1405" height="827" alt="Screenshot 2026-01-05 at 17 16 54" src="https://github.com/user-attachments/assets/51bf24e5-8daf-4e4f-b511-10f2e569da53" />
 
 ## 📖 Contents
 - [System Architecture](#-system-srchitecture)
