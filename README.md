@@ -373,13 +373,14 @@ Supervisor-controlled orchestration
 # Detailed overview of each and every agents
 --------------------------------------------
 
+---
+
 ## 🧰 Tool Agents (`tool_agents.py`)
 
 This module contains all **tool-specific agents** used in the LangGraph workflow.  
 Each agent inherits from `BaseToolAgent` and implements its own retrieval logic while following common guardrails.
 
----
-
+---------------------------
 ### BaseToolAgent
 
 #### 🎯 Purpose
@@ -405,8 +406,8 @@ Abstract base class for all tool agents. Provides:
 | `raw_tool_data`  | `List[Dict[str, Any]]` | Appended tool results                        |
 | `references`     | `List[str]`            | Formatted citations for synthesis            |
 
----
 
+---------------------------
 ### PubMedAgent
 
 #### 🎯 Purpose
@@ -440,7 +441,7 @@ Fetches biomedical literature via PubMed API using tiered queries.
 3. Fetch metadata via `_fetch_metadata_for_pmids()`
 4. Append results to `raw_tool_data` and `references`
 
----
+---------------------------
 
 ### ArxivAgent
 
@@ -480,7 +481,7 @@ Fetches preprints from Arxiv and optionally filters by publication time.
 4. Call Arxiv API
 5. Standardize results and update `raw_tool_data` and `references`
 
----
+---------------------------
 
 ### OpenAlexAgent
 
@@ -518,7 +519,7 @@ Fetches scholarly works from OpenAlex with structured metadata.
 3. Call `_call_openalex_api()`
 4. Standardize results and update `raw_tool_data` and `references`
 
----
+---------------------------
 
 ### MaterialsAgent
 
@@ -554,7 +555,7 @@ Queries the Materials Project API for material properties.
 3. Standardize via `_standardize_mp_results()`
 4. Append results to `raw_tool_data` and `references`
 
----
+---------------------------
 
 ### WebAgent
 
