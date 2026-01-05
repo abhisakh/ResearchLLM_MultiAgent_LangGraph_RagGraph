@@ -693,14 +693,31 @@ FieldTypeDescriptionneeds\_refinementboolTrue if the report fails to meet the ex
 flowchart TD
     Start[Start EvaluationAgent]
     CheckEmpty{Final Report Empty?}
-    ForceRefinement[Set needs_refinement=True & refinement_reason="Report was empty"]
+    ForceRefinement[Set needs_refinement TRUE / Set refinement_reason empty report]
     BuildPrompt[Construct Evaluation Prompt]
     LLM[Invoke GPT-4 Structured Output]
-    UpdateState[Update ResearchState: needs_refinement, refinement_reason, report_generated]
+    UpdateState[Update ResearchState flags]
     Debug[Print verbose debug info]
     Done[Return Updated ResearchState]
 
     Start --> CheckEmpty
     CheckEmpty -->|Yes| ForceRefinement --> Done
     CheckEmpty -->|No| BuildPrompt --> LLM --> UpdateState --> Debug --> Done
-```#
+
+```
+### 🔄 Execution Flow
+```python
+class EvaluationSchema(BaseModel):
+    """
+    Schema for Evaluation Agent output to ensure reliable boolean routing.
+    """
+    needs_refinement: bool = Field(
+        description="Set to TRUE if the final_report fails to address a key, actionable part of the execution plan. Otherwise, set to FALSE."
+    )
+    refinement_reason: str = Field(
+        description="Specific reason why refinement is needed (e.g., 'Missing data on performance degradation'), or 'Report is satisfactory' if FALSE."
+    )
+
+```
+
+
