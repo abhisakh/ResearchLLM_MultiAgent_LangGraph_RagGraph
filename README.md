@@ -41,6 +41,14 @@
     - [Execution Flow](#-execution-flow)
     - [Failure Handling](#-failure-handling)
     - [Summary](#-summary-1)
+  - [EvaluationAgent](#-evaluationagent)
+    - [EvaluationSchema](#-evaluationschema)
+    - [Purpose & Responsibility](#purpose--responsibility)
+    - [Inputs & Outputs](#inputs--outputs)
+    - [Execution Flow](#execution-flow-1)
+    - [Failure Handling](#failure-handling-1)
+    - [Debug & Logging](#debug--logging)
+
 
 
 
