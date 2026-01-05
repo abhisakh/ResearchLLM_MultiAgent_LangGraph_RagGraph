@@ -1,5 +1,27 @@
-# 🔬 Advanced Multi-Agent Research Framework
-<img width="1405" height="827" alt="Screenshot 2026-01-05 at 17 16 54" src="https://github.com/user-attachments/assets/51bf24e5-8daf-4e4f-b511-10f2e569da53" />
+<div align="center">
+
+  # 🔬 Advanced Multi-Agent Research Framework 
+  ## (🧠 Declarative Research Agent)  
+  **Autonomous AI agent for scientific literature discovery**
+  
+  ![Status](https://img.shields.io/badge/status-active-success)
+  ![License](https://img.shields.io/badge/license-MIT-blue)
+  ![Build](https://img.shields.io/badge/build-passing-brightgreen)
+
+</div>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/51bf24e5-8daf-4e4f-b511-10f2e569da53" width="900" 
+      style="
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.12);"
+    />
+  
+</div>
+
+---
+
 
 ## 📖 Contents
 - [System Architecture](#-system-srchitecture)
