@@ -27,10 +27,11 @@
   - [Design Benefits](#-design-benefits)
   - [Summary](#-summary)
 
-- [📚 Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
-  - [RetrievalAgent](#-retrievalagent)
-  - [RAGAgent](#-ragagent)
-  - [RAG Processing Stages](#rag-processing-stages)
+- [ Detailed overview of each and every agents](#-detailed-overview-of-each-and-every-agents)
+  - [📚 Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
+    - [RetrievalAgent](#-retrievalagent)
+    - [RAGAgent](#-ragagent)
+    - [RAG Processing Stages](#rag-processing-stages)
 
 
 
@@ -310,6 +311,8 @@ Supervisor-controlled orchestration
 
 
 ---
+
+# Detailed overview of each and every agents
 
 ## 📚 Retrieval & RAG Pipeline
 
