@@ -1,7 +1,9 @@
 # Research Assistant MultiAgent Architecture
 
 ## 📖 Contents
-
+- [System Architecture](#-system-srchitecture)
+  - [High-Level Execution Flow](#-high-level-execution-flow)
+    
 - [ResearchState (Shared Workflow State)](#-researchstate-shared-workflow-state)
   - [State Categories](#-state-categories)
     - [User Input & Planning](#1️⃣-user-input--planning)
@@ -93,12 +95,20 @@
 
 
 
+---
+# 🔬 Advanced Multi-Agent Research Framework
+---
+This framework implements a state-driven, autonomous research pipeline using LangGraph. It coordinates specialized agents to perform deep-dive scientific literature reviews, material property analysis, and factual synthesis with an integrated evaluation-refinement loop.
 
+## 🗺️ System Architecture
+The architecture is built on a Supervisor-Worker pattern. The Supervisor manages the lifecycle of a request, while specialized agents handle specific phases of the research.
 
-
-
-
-
+## 🔄 High-Level Execution Flow
+1. **Planning Phase:** The query is cleaned, intent is classified, and a dynamic execution plan is generated.
+2. **Tool Orchestration:** Active tools (PubMed, ArXiv, etc.) are executed sequentially.
+3. **RAG Pipeline:** Raw data is downloaded, converted to full-text, chunked, and indexed for semantic search.
+4. **Synthesis:** A structured report is generated, grounded in the retrieved citations.
+5. **Quality Gate:** The Evaluation Agent audits the report. If gaps exist, it triggers a Refinement Loop.
 
 ---
 ## 🧠 ResearchState (Shared Workflow State)
