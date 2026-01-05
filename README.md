@@ -28,6 +28,9 @@
   - [Summary](#-summary)
 
 - [Detailed Overview of Each and Every Agent](#detailed-overview-of-each-and-every-agent)
+  - [IntentAgent](#intentagent)
+  - [PlanningAgent](#planningagent)
+  - [QueryGenerationAgent](#querygenerationagent) 
   - [Tool Agents (`tool_agents.py`)](#-tool-agents-tool_agentspy)
     - [BaseToolAgent](#basetoolagent)
       - [Purpose](#-purpose)
@@ -375,7 +378,123 @@ Supervisor-controlled orchestration
 
 ---
 
-## 🧰 Tool Agents (`tool_agents.py`)
+## IntentAgent
+
+**Purpose:**  
+Determines the primary intent of the user query and extracts structured constraints. Outputs to `ResearchState`.
+
+**Inputs:**  
+- `semantic_query` (string) — the user's research query.
+
+**Outputs:**  
+- `primary_intent` (string) — chosen intent from predefined options.  
+- `system_constraints` (list of strings) — structured constraints extracted.  
+- `material_elements` (list) — initialized empty for later agents.
+
+### Execution Flow
+
+```mermaid
+flowchart TD
+    A[Receive Semantic Query] --> B[Format Prompt for LLM]
+    B --> C[Call LLM and Parse JSON]
+    C --> D{LLM output valid?}
+    D -->|Yes| E[Set primary_intent & system_constraints]
+    D -->|No| F[Default to general_research & empty constraints]
+    E --> G[Initialize material_elements]
+    F --> G
+    G --> H[Return Updated ResearchState]
+```
+
+---
+
+## PlanningAgent
+
+**Purpose:**  
+Generates a step-by-step execution plan and dynamically selects active tools based on the user's intent, query, and constraints. Handles **refinement logic** if previous execution attempts failed, ensuring failed tools are deactivated and alternatives are activated.
+
+### Inputs
+
+- `primary_intent` (string) — The main goal of the research query (from `IntentAgent`).  
+- `semantic_query` (string) — The user's research query.  
+- `system_constraints` (list of strings) — Extracted constraints.  
+- Optional (for refinement):  
+  - `is_refining` (bool) — Indicates if this is a refinement attempt.  
+  - `refinement_reason` (string) — Reason for previous execution failure.
+
+### Outputs
+
+- `execution_plan` (list of strings) — Step-by-step plan for research execution.  
+- `active_tools` (list of strings) — Subset of tools selected for this query (e.g., `["arxiv", "openalex", "web"]`).
+
+### Execution Flow
+
+```mermaid
+flowchart TD
+    A[Receive ResearchState] --> B[Check Refinement Mode]
+    B --> C[Format Prompt for LLM with Constraints & Available Tools]
+    C --> D[Call LLM and Parse JSON]
+    D --> E{LLM output valid?}
+    E -->|Yes| F[Validate Active Tools & Execution Plan]
+    E -->|No| G[Use Fallback Plan & Tools]
+    F --> H[Update ResearchState with execution_plan & active_tools]
+    G --> H
+    H --> I[Return Updated ResearchState]
+```
+### QueryGenerationAgent
+
+**Purpose:**  
+Generates **tiered, tool-specific search queries** and extracts relevant chemical/material elements from the user's query. Ensures queries are only created for **active tools** and handles refinement instructions for problematic tools (e.g., ArXiv category adjustment).
+
+### Inputs
+- `semantic_query` (string) — The user's research query.  
+- `active_tools` (list of strings) — Tools selected by `PlanningAgent`.  
+- `system_constraints` (list of strings) — Extracted constraints from `IntentAgent`.  
+
+### Outputs
+- `tiered_queries` (dict) — Tiered search queries per tool. Example structure:
+
+```json
+{
+    "pubmed": {"strict": "...", "moderate": "...", "broad": "..."},
+    "arxiv": {"strict": "...", "moderate": "...", "broad": "..."},
+    "openalex": {"simple": "..."},
+    "web": {"simple": "..."}
+}
+```
+material_elements (list of strings) 
+— Includes most specific chemical formula first, followed by individual elements.
+
+api_search_term (string) 
+— Primary search term for API calls (first element in material_elements if available, otherwise semantic_query).
+
+### Execution Flow
+```mermaid
+flowchart TD
+    A[Receive ResearchState] --> B[Check semantic_query & active_tools]
+    B --> C[Parse system_constraints into dict]
+    C --> D[Format Prompt for LLM with query, constraints, active tools]
+    D --> E[Call LLM to generate JSON with tiered_queries & material_elements]
+    E --> F{LLM output valid?}
+    F -->|Yes| G[Filter queries for active_tools only]
+    G --> H[Merge material_elements with system_constraints]
+    H --> I[Set api_search_term]
+    I --> J[Update ResearchState with tiered_queries, material_elements, api_search_term]
+    F -->|No| K[Fallback: empty tiered_queries, material_elements = system_constraints, api_search_term = semantic_query]
+    K --> J
+    J --> L[Return Updated ResearchState]
+
+```
+
+### Notes
+- Tiered Queries: PubMed and ArXiv have strict, moderate, broad tiers; OpenAlex and Web use simple.
+- Material Extraction: Ensures the primary formula appears first, followed by constituent elements.
+- ArXiv Special Handling: Removes previous restrictive category filters and ignores date keywords to improve coverage.
+- Refinement Handling: Skips queries for deactivated tools and adjusts tier instructions if necessary.
+
+---
+
+---------------------------------
+# 🧰 Tool Agents (`tool_agents.py`)
 
 This module contains all **tool-specific agents** used in the LangGraph workflow.  
 Each agent inherits from `BaseToolAgent` and implements its own retrieval logic while following common guardrails.
