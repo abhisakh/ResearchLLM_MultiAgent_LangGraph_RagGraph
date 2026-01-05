@@ -319,7 +319,7 @@ Supervisor-controlled orchestration
 This project uses a two-stage Retrieval-Augmented Generation (RAG) pipeline designed to be model-agnostic, scalable, and robust to heterogeneous data sources.
 The pipeline consists of:
 - RetrievalAgent – document downloading, text extraction, and semantic chunking
-- RAGAgent – vector search, contextual expansion, filtering, and final context assembly
+- RAGAgent – vector search, **contextual expansion**, filtering, and final context assembly
 
 ### 🔹 RetrievalAgent
 **Purpose**
