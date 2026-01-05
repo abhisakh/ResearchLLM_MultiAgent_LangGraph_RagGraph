@@ -25,7 +25,7 @@
   - [Tool Execution Loop Example](#-tool-execution-loop-example)
   - [Refinement Loop](#-refinement-loop)
   - [Design Benefits](#-design-benefits)
-  - [Summary](#-summary)
+  - [Summary](#-summary-1)
 
 - [Detailed overview of each and every agents](#detailed-overview-of-each-and-every-agents)
   - [📚 Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
