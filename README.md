@@ -368,60 +368,42 @@ This module contains all the **tool-specific agents** used in the LangGraph work
 ### BaseToolAgent
 
 #### Common Guardrails & Methods
-
 The BaseToolAgent is the **abstract base class** for all tool agents. It provides:
-
-*   **Tool activation check**: \_should\_run() ensures the tool is in active\_tools and has valid input.
-    
+*   **Tool activation check**: \_should\_run() ensures the tool is in active\_tools and has valid input.  
 *   **Query retrieval**: \_get\_query\_data() fetches tiered queries for the agent.
-    
-*   **Tool key extraction**: \_get\_tool\_key() returns the standardized key from agent\_id.
-    
+*   **Tool key extraction**: \_get\_tool\_key() returns the standardized key from agent\_id.   
 *   **Execution interface**: Subclasses must implement execute(state).
     
 
 **Inputs (from ResearchState)**:
-
 *   active\_tools: list of enabled tools
-    
 *   tiered\_queries: dictionary of search queries per tool
-    
 *   api\_search\_term: used for materials queries
     
 
 **Outputs (to ResearchState)**:
-
 *   None directly; subclasses append data to raw\_tool\_data and references.
     
 
 ### PubMedAgent
 
 #### Tiered Search
-
 Executes PubMed searches using **strict → moderate → broad** tiers, stopping once relevant results are found. Uses Entrez email for API access.
 
 #### Metadata Fetch & URL Construction
-
-*   Fetches abstracts and metadata for retrieved PMIDs.
-    
+*   Fetches abstracts and metadata for retrieved PMIDs. 
 *   Constructs reliable **PubMed URLs** for each article: https://pubmed.ncbi.nlm.nih.gov/{pmid}/.
     
 
 #### Execution Flow
-
 1.  Checks \_should\_run() guardrails.
-    
 2.  Executes \_execute\_tiered\_search() for available queries.
-    
-3.  Fetches metadata via \_fetch\_metadata\_for\_pmids().
-    
+3.  Fetches metadata via \_fetch\_metadata\_for\_pmids().  
 4.  Appends standardized entries to raw\_tool\_data and references.
     
 
 **Outputs**:
-
-*   raw\_tool\_data: standardized article text + metadata
-    
+*   raw\_tool\_data: standardized article text + metadata 
 *   references: formatted journal article strings
     
 
