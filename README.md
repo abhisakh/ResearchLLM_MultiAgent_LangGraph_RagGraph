@@ -832,7 +832,7 @@ This design is safe across OpenAI, Claude, Gemini, and other LLMs.
 - Ensures at least one placeholder chunk exists if retrieval fails
 
 
-## 🔹 RAGAgent
+## 📥 RetrievalAgent + 🔎 RAGAgent(The filter)
 ```mermaid
 flowchart TD
     RawData[Raw Tool Data]
