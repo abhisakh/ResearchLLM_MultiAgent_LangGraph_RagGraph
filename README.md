@@ -689,14 +689,18 @@ FieldTypeDescriptionneeds\_refinementboolTrue if the report fails to meet the ex
 
 ### 🔄 Execution Flow
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   flowchart TD      Start[Start EvaluationAgent]      CheckEmpty{Final Report Empty?}      ForceRefinement[Set needs_refinement=True & refinement_reason="Report was empty"]      BuildPrompt[Construct Evaluation Prompt]      LLM[Invoke GPT-4 Structured Output]      UpdateState[Update ResearchState: needs_refinement, refinement_reason, report_generated]      Debug[Print verbose debug info]      Done[Return Updated ResearchState]      Start --> CheckEmpty      CheckEmpty -->|Yes| ForceRefinement --> Done      CheckEmpty -->|No| BuildPrompt --> LLM --> UpdateState --> Debug --> Done   `
+```mermaid
+flowchart TD
+    Start[Start EvaluationAgent]
+    CheckEmpty{Final Report Empty?}
+    ForceRefinement[Set needs_refinement=True & refinement_reason="Report was empty"]
+    BuildPrompt[Construct Evaluation Prompt]
+    LLM[Invoke GPT-4 Structured Output]
+    UpdateState[Update ResearchState: needs_refinement, refinement_reason, report_generated]
+    Debug[Print verbose debug info]
+    Done[Return Updated ResearchState]
 
-### 🗂 EvaluationSchema
-
-Defines the structured output that the EvaluationAgent expects from the LLM.
-
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   class EvaluationSchema(BaseModel):      """      Schema for Evaluation Agent output to ensure reliable boolean routing.      """      needs_refinement: bool = Field(          description="Set to TRUE if the final_report fails to address a key, actionable part of the execution plan. Otherwise, set to FALSE."      )      refinement_reason: str = Field(          description="Specific reason why refinement is needed (e.g., 'Missing data on performance degradation'), or 'Report is satisfactory' if FALSE."      )   `
-
-
-
-
+    Start --> CheckEmpty
+    CheckEmpty -->|Yes| ForceRefinement --> Done
+    CheckEmpty -->|No| BuildPrompt --> LLM --> UpdateState --> Debug --> Done
+```#
