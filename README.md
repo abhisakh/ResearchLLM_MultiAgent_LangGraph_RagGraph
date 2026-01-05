@@ -27,7 +27,7 @@
   - [Design Benefits](#-design-benefits)
   - [Summary](#-summary)
 
-- [ Detailed overview of each and every agents](#-detailed-overview-of-each-and-every-agents)
+- [Detailed overview of each and every agents](#-detailed-overview-of-each-and-every-agents)
   - [📚 Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
     - [RetrievalAgent](#-retrievalagent)
     - [RAGAgent](#-ragagent)
