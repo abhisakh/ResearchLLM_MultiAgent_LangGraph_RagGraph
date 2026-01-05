@@ -34,6 +34,13 @@
     - [RAG Processing Stages](#rag-processing-stages)
   - [🧠 SynthesisAgent](#-synthesisagent)
     - [🎯 Purpose](#-purpose)
+    - [🔌 Inputs (from ResearchState)](#-inputs-from-researchstate))
+    - [📤 Outputs (written to ResearchState)](#-outputs-written-to-researchstate))
+    - [🧩 Internal Responsibilities](#-internal-responsibilities)
+    - [🔁 Refinement Mode (Critical Feature)](#-refinement-mode-critical-feature)
+    - [🧪 Execution Flow](#-execution-flow)
+    - [🚦 Failure Handling](#-failure-handling)
+    - [🧠 Summary](#-summary)
 
 
 
@@ -520,7 +527,113 @@ _extract_material_data()
   - Boolean presence flag
 This drives dynamic report structure selection.
 
+2️⃣ **Reference Formatting & Deduplication**
+```python
+_extract_references()
+```
+- Converts raw reference strings into numbered Markdown citations
+- Resolves URLs using raw_tool_data metadata
+- Supports:
+  - PubMed
+  - Arxiv
+  - OpenAlex
+  - Web sources
+  - Materials Project references
+Ensures:
+  - Stable numbering
+  - Deduplication
+  - Markdown-safe output
 
+3️⃣ **Context Relevance Guardrail (Anti-GIGO)**
+```
+_check_context_relevance()
+```
+***Used only on initial generation, not during refinement.***
+
+If:
+- Context is very short, or
+- Appears weak or generic
+Then the agent asks the LLM:
+***“Is this context actually relevant to the user’s question?”***
+
+If NO → the agent:
+- Fails gracefully
+- Writes a clear diagnostic message
+- Skips hallucinated synthesis
+This prevents meaningless reports.
+
+4️⃣ **Dynamic Prompt Construction**
+```python
+_format_prompt()
+```
+The prompt is fully dynamic, adapting to:
+| Condition                 | Behavior                           |
+| ------------------------- | ---------------------------------- |
+| Material data present     | Generates materials-centric report |
+| No material data          | Generates literature review        |
+| `needs_refinement = True` | Rewrites previous report           |
+| Initial run               | Generates new report               |
+
+5️⃣ **Enforced Report Structure**
+Every report must contain exactly four sections:
+```python
+- Introduction / Stability Analysis
+- Key Research Findings
+- Conclusion and Future Outlook
+- References
+```
+### 🔁 Refinement Mode (Critical Feature)
+
+When state["needs_refinement"] == True:
+- The agent becomes a report rewriting expert
+Receives:
+- Evaluation feedback
+- Previous report
+- Updated RAG context
+Must:
+- Address feedback explicitly
+- Fix errors or omissions
+- Preserve scientific tone
+- Maintain citation correctness
+Output:
+- A single rewritten final report
+- No commentary or explanation
+
+### 🧪 Execution Flow
+```mermaid
+flowchart TD
+    Context[Filtered RAG Context]
+    Check{Context Relevant?}
+
+    FormatPrompt[Build Dynamic Prompt]
+    LLM[LLM Report Generation]
+    Report[Final Report]
+
+    Context --> Check
+    Check -->|Yes| FormatPrompt
+    Check -->|No| Report
+
+    FormatPrompt --> LLM
+    LLM --> Report
+
+```
+
+### 🚦 Failure Handling
+| Scenario           | Behavior                     |
+| ------------------ | ---------------------------- |
+| Missing LLM client | Graceful failure message     |
+| Irrelevant context | Abort with explanation       |
+| No retrieved data  | Abort synthesis              |
+| LLM error          | Error state with termination |
+
+### 🧠 Summary
+The SynthesisAgent is the final authority in the LangGraph workflow.
+It converts structured retrieval into a grounded, citation-backed scientific report, while remaining:
+- State-driven
+- Evaluation-aware
+- Refinement-safe
+- Hallucination-resistant
+It ensures the system produces credible research output, not just fluent text.
 
 
 
