@@ -638,7 +638,64 @@ It converts structured retrieval into a grounded, citation-backed scientific rep
 - Hallucination-resistant
 It ensures the system produces credible research output, not just fluent text.
 
+---
 
+## 🧪 EvaluationAgent
+------------------
+
+The EvaluationAgent is responsible for assessing the SynthesisAgent’s final report against the dynamic execution plan and determining whether refinement is needed. It uses GPT-4 with a structured Pydantic schema to ensure reliable, boolean-based routing in the LangGraph workflow.
+
+### 🎯 Purpose
+
+*   Critically evaluate completeness, relevance, and factual correctness of the generated report.
+    
+*   Decide if the report requires refinement.
+    
+*   Provide a structured reason for any required refinements.
+    
+*   Maintain debug-friendly output for traceability and iterative workflows.
+    
+
+### 🔌 Inputs (from ResearchState)
+
+FieldTypeDescriptionuser\_querystrOriginal query from the userexecution\_planList\[str\]High-level tasks the report should coverfinal\_reportstrSynthesized report from SynthesisAgent
+
+### 📤 Outputs (written to ResearchState)
+
+FieldTypeDescriptionneeds\_refinementboolTrue if the report fails to meet the execution plan; False otherwiserefinement\_reasonstrSpecific reason for refinement, or "Report is satisfactory" if no action neededreport\_generatedboolMarks that the report has been evaluated
+
+### 🧩 Internal Responsibilities
+
+1.  **Prompt Construction**Build a structured evaluation prompt including the user query, execution plan, and synthesized report.
+    
+2.  **Structured LLM Invocation**Use GPT-4 with EvaluationSchema to produce reliable boolean output.
+    
+3.  **State Update & Routing**Update ResearchState flags: needs\_refinement, refinement\_reason, and report\_generated.
+    
+4.  **Verbose Debugging**Print color-coded logs showing:
+    
+    *   Start of evaluation
+        
+    *   Empty report handling
+        
+    *   LLM evaluation results
+        
+    *   Post-evaluation state flags
+        
+    *   Execution plan length and report character count
+        
+5.  **Error Handling**Gracefully fall back to marking the report as complete if the LLM fails.
+    
+
+### 🔄 Execution Flow
+
+Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   flowchart TD      Start[Start EvaluationAgent]      CheckEmpty{Final Report Empty?}      ForceRefinement[Set needs_refinement=True & refinement_reason="Report was empty"]      BuildPrompt[Construct Evaluation Prompt]      LLM[Invoke GPT-4 Structured Output]      UpdateState[Update ResearchState: needs_refinement, refinement_reason, report_generated]      Debug[Print verbose debug info]      Done[Return Updated ResearchState]      Start --> CheckEmpty      CheckEmpty -->|Yes| ForceRefinement --> Done      CheckEmpty -->|No| BuildPrompt --> LLM --> UpdateState --> Debug --> Done   `
+
+### 🗂 EvaluationSchema
+
+Defines the structured output that the EvaluationAgent expects from the LLM.
+
+Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   class EvaluationSchema(BaseModel):      """      Schema for Evaluation Agent output to ensure reliable boolean routing.      """      needs_refinement: bool = Field(          description="Set to TRUE if the final_report fails to address a key, actionable part of the execution plan. Otherwise, set to FALSE."      )      refinement_reason: str = Field(          description="Specific reason why refinement is needed (e.g., 'Missing data on performance degradation'), or 'Report is satisfactory' if FALSE."      )   `
 
 
 
