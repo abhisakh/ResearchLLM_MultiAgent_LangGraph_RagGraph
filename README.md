@@ -360,137 +360,226 @@ Supervisor-controlled orchestration
 # Detailed overview of each and every agents
 --------------------------------------------
 
-🧰 Tool Agents (tool\_agents.py)
---------------------------------
+## 🧰 Tool Agents (`tool_agents.py`)
 
-This module contains all the **tool-specific agents** used in the LangGraph workflow. Each agent inherits from BaseToolAgent and implements its own retrieval logic while respecting common guardrails.
+This module contains all **tool-specific agents** used in the LangGraph workflow.  
+Each agent inherits from `BaseToolAgent` and implements its own retrieval logic while following common guardrails.
+
+---
 
 ### BaseToolAgent
 
-#### Common Guardrails & Methods
-The BaseToolAgent is the **abstract base class** for all tool agents. It provides:
-*   **Tool activation check**: \_should\_run() ensures the tool is in active\_tools and has valid input.  
-*   **Query retrieval**: \_get\_query\_data() fetches tiered queries for the agent.
-*   **Tool key extraction**: \_get\_tool\_key() returns the standardized key from agent\_id.   
-*   **Execution interface**: Subclasses must implement execute(state).
-    
+#### 🎯 Purpose
+Abstract base class for all tool agents. Provides:
 
-**Inputs (from ResearchState)**:
-*   active\_tools: list of enabled tools
-*   tiered\_queries: dictionary of search queries per tool
-*   api\_search\_term: used for materials queries
-    
+- Tool activation checks (`_should_run()`)
+- Tiered query retrieval (`_get_query_data()`)
+- Tool key extraction (`_get_tool_key()`)
+- Standardized execution interface (`execute(state)`)
 
-**Outputs (to ResearchState)**:
-*   None directly; subclasses append data to raw\_tool\_data and references.
-    
+#### 🔌 Inputs (from ResearchState)
+
+| Field             | Type                        | Description                            |
+| ----------------- | --------------------------- | -------------------------------------- |
+| `active_tools`    | `List[str]`                 | List of enabled tools                  |
+| `tiered_queries`  | `Dict[str, Dict[str, str]]` | Tool-specific queries (strict/moderate/broad) |
+| `api_search_term` | `str`                       | Used for structured API tools (e.g., Materials) |
+
+#### 📤 Outputs (to ResearchState)
+
+| Field            | Type                   | Description                                   |
+| ---------------- | --------------------- | --------------------------------------------- |
+| `raw_tool_data`  | `List[Dict[str, Any]]` | Appended tool results                        |
+| `references`     | `List[str]`            | Formatted citations for synthesis            |
+
+---
 
 ### PubMedAgent
 
-#### Tiered Search
-Executes PubMed searches using **strict → moderate → broad** tiers, stopping once relevant results are found. Uses Entrez email for API access.
+#### 🎯 Purpose
+Fetches biomedical literature via PubMed API using tiered queries.
 
-#### Metadata Fetch & URL Construction
-*   Fetches abstracts and metadata for retrieved PMIDs. 
-*   Constructs reliable **PubMed URLs** for each article: https://pubmed.ncbi.nlm.nih.gov/{pmid}/.
-    
+#### 🔹 Tiered Search
+- Executes queries in order: **strict → moderate → broad**
+- Stops after retrieving relevant results
+- Uses Entrez email for API access
 
-#### Execution Flow
-1.  Checks \_should\_run() guardrails.
-2.  Executes \_execute\_tiered\_search() for available queries.
-3.  Fetches metadata via \_fetch\_metadata\_for\_pmids().  
-4.  Appends standardized entries to raw\_tool\_data and references.
-    
+#### 🔹 Metadata Fetch & URL Construction
+- Retrieves abstracts, authors, journal, publication date
+- Constructs canonical PubMed URLs: `https://pubmed.ncbi.nlm.nih.gov/{pmid}/`
 
-**Outputs**:
-*   raw\_tool\_data: standardized article text + metadata 
-*   references: formatted journal article strings
-    
+#### 🔌 Inputs
+
+| Field            | Type                        | Description                     |
+| ---------------- | --------------------------- | ------------------------------- |
+| `tiered_queries` | `Dict[str, Dict[str, str]]` | PubMed query strings            |
+
+#### 📤 Outputs
+
+| Field           | Type                   | Description                        |
+| --------------- | --------------------- | ---------------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Standardized article metadata + text |
+| `references`    | `List[str]`            | Formatted citations               |
+
+#### 🔄 Execution Flow
+1. Check `_should_run()`
+2. Execute `_execute_tiered_search()`
+3. Fetch metadata via `_fetch_metadata_for_pmids()`
+4. Append results to `raw_tool_data` and `references`
+
+---
 
 ### ArxivAgent
 
-#### Time Constraints
-*   Optional filtering based on TIME\_PERIOD from system\_constraints.
-*   Supports last decade filtering.
-    
+#### 🎯 Purpose
+Fetches preprints from Arxiv and optionally filters by publication time.
 
-#### Tiered Search
-*   Uses strict → moderate → broad query order.
-*   Calls \_call\_arxiv\_search() via Arxiv API client.
-    
+#### 🔹 Time Constraints
+- Filters results based on `TIME_PERIOD` from `system_constraints`
+- Defaults to last 10 years if specified
 
-#### Standardization of Results
-*   Abstracts truncated to 500 characters for snippets. 
-*   Constructs structured metadata including pdf\_url and published year.
-    
+#### 🔹 Tiered Search
+- Executes queries in order: **strict → moderate → broad**
+- Calls `_call_arxiv_search()` via Arxiv API
 
-#### Execution Flow
-1.  Checks \_should\_run() and prepares tiered queries.
-2.  Applies time filter if available.
-3.  Calls Arxiv API for relevant papers.
-4.  Standardizes results and updates raw\_tool\_data and references.
-    
+#### 🔹 Standardization of Results
+- Truncates abstracts to 500 characters
+- Includes metadata: title, authors, published year, PDF URL
+
+#### 🔌 Inputs
+
+| Field                 | Type                        | Description                     |
+| --------------------- | --------------------------- | ------------------------------- |
+| `tiered_queries`      | `Dict[str, Dict[str, str]]` | Arxiv query strings             |
+| `system_constraints`  | `List[str]`                 | Optional time filters           |
+
+#### 📤 Outputs
+
+| Field           | Type                   | Description                        |
+| --------------- | --------------------- | ---------------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Standardized abstracts + metadata  |
+| `references`    | `List[str]`            | Formatted citations               |
+
+#### 🔄 Execution Flow
+1. Check `_should_run()`
+2. Prepare tiered queries
+3. Apply time filter if specified
+4. Call Arxiv API
+5. Standardize results and update `raw_tool_data` and `references`
+
+---
 
 ### OpenAlexAgent
-#### API Call & Query Handling
-*   Calls OpenAlex API using title.search filter.
-*   Requires a polite email (OPENALEX\_EMAIL) for API usage.
-    
 
-#### Abstract Reconstruction
-*   Handles OpenAlex's inverted index format. 
-*   Reconstructs abstracts robustly, handling missing or incomplete indices.
-    
+#### 🎯 Purpose
+Fetches scholarly works from OpenAlex with structured metadata.
 
-#### Standardization of Results
-*   Builds standardized dictionary for each work: text, metadata (including openalex\_id), and tool ID.
-    
+#### 🔹 API Call & Query Handling
+- Calls OpenAlex API using `title.search`
+- Requires `OPENALEX_EMAIL` for API usage
 
-#### Execution Flow
-1.  Checks \_should\_run().
-2.  Retrieves tiered query.
-3.  Calls \_call\_openalex\_api().
-4.  Standardizes results and updates raw\_tool\_data and references.
-    
+#### 🔹 Abstract Reconstruction
+- Handles inverted index abstracts
+- Robustly reconstructs abstracts even if indices are incomplete
+
+#### 🔹 Standardization of Results
+- Builds structured dictionaries:
+  - `text`, `metadata`, `tool_id`, `openalex_id`
+
+#### 🔌 Inputs
+
+| Field            | Type                        | Description                     |
+| ---------------- | --------------------------- | ------------------------------- |
+| `tiered_queries` | `Dict[str, Dict[str, str]]` | OpenAlex query strings          |
+
+#### 📤 Outputs
+
+| Field           | Type                   | Description                        |
+| --------------- | --------------------- | ---------------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Standardized work metadata + text |
+| `references`    | `List[str]`            | Formatted citations               |
+
+#### 🔄 Execution Flow
+1. Check `_should_run()`
+2. Retrieve tiered query
+3. Call `_call_openalex_api()`
+4. Standardize results and update `raw_tool_data` and `references`
+
+---
 
 ### MaterialsAgent
 
-#### API Query & Validation
-*   Queries **Materials Project** API via MPRester.
-*   Only runs if api\_search\_term is valid (non-empty, not a constraint string).
-    
+#### 🎯 Purpose
+Queries the Materials Project API for material properties.
 
-#### Standardization of Material Data
-*   Converts raw data into **human-readable entries** with:
-    *   Stability status   
-    *   Band gap (LaTeX formatted)
-    *   Energy above hull (LaTeX formatted)
-        
+#### 🔹 API Query & Validation
+- Uses `MPRester` for API calls
+- Runs only if `api_search_term` is valid
 
-#### Execution Flow
-1.  Checks \_should\_run(). 
-2.  Calls \_call\_materials\_project\_api() with target formula.
-3.  Standardizes results via \_standardize\_mp\_results().
-4.  Updates raw\_tool\_data and references.
-    
+#### 🔹 Standardization of Material Data
+- Converts raw results to human-readable entries:
+  - Stability status
+  - Band gap (LaTeX)
+  - Energy above hull (LaTeX)
+
+#### 🔌 Inputs
+
+| Field            | Type   | Description                  |
+| ---------------- | ------ | ---------------------------- |
+| `api_search_term` | `str` | Target material formula      |
+
+#### 📤 Outputs
+
+| Field           | Type                   | Description                  |
+| --------------- | --------------------- | ---------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Standardized material info   |
+| `references`    | `List[str]`            | Materials Project citations |
+
+#### 🔄 Execution Flow
+1. Check `_should_run()`
+2. Call `_call_materials_project_api()` with formula
+3. Standardize via `_standardize_mp_results()`
+4. Append results to `raw_tool_data` and `references`
+
+---
 
 ### WebAgent
 
-#### DuckDuckGo Search Integration
-*   Uses DDGS() client for web search.
-*   Selects tiered query (simple → broad) or falls back to semantic\_query.
-    
-#### Standardization of Results
-*   Converts search results to structured dictionaries containing:
-    *   Text snippet
-    *   URL
-    *   Source metadata
-        
-#### Execution Flow
-1.  Checks \_should\_run().
-2.  Performs DuckDuckGo search via \_call\_ddg\_search().
-3.  Standardizes results and updates raw\_tool\_data and references.
-4.  Warns if no results are found.
+#### 🎯 Purpose
+Performs general web search using DuckDuckGo for supplemental information.
+
+#### 🔹 DuckDuckGo Search Integration
+- Uses `DDGS()` client
+- Selects tiered query (simple → broad)
+- Falls back to `semantic_query` if no tool query exists
+
+#### 🔹 Standardization of Results
+- Structured dictionaries per result:
+  - `text snippet`
+  - `url`
+  - `source metadata`
+
+#### 🔌 Inputs
+
+| Field            | Type   | Description                         |
+| ---------------- | ------ | ----------------------------------- |
+| `tiered_queries` | Dict   | Optional tool-specific queries      |
+| `semantic_query` | str    | Fallback search term                |
+
+#### 📤 Outputs
+
+| Field           | Type                   | Description                 |
+| --------------- | --------------------- | --------------------------- |
+| `raw_tool_data` | `List[Dict[str, Any]]` | Structured web snippets    |
+| `references`    | `List[str]`            | Web citations              |
+
+#### 🔄 Execution Flow
+1. Check `_should_run()`
+2. Call `_call_ddg_search()`
+3. Standardize results
+4. Append to `raw_tool_data` and `references`
+5. Warn if no results are found
+
    
 ---
 
