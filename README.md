@@ -28,6 +28,31 @@
   - [Summary](#-summary)
 
 - [Detailed overview of each and every agents](#detailed-overview-of-each-and-every-agents)
+  - [Tool Agents (`tool_agents.py`)](#-tool-agents-tool_agentspy)
+    - [BaseToolAgent](#basetoolagent)
+      - [Common Guardrails & Methods](#common-guardrails--methods)
+    - [PubMedAgent](#pubmedagent)
+      - [Tiered Search](#tiered-search)
+      - [Metadata Fetch & URL Construction](#metadata-fetch--url-construction)
+      - [Execution Flow](#execution-flow)
+    - [ArxivAgent](#arxivagent)
+      - [Time Constraints](#time-constraints)
+      - [Tiered Search](#tiered-search-1)
+      - [Standardization of Results](#standardization-of-results)
+      - [Execution Flow](#execution-flow-1)
+    - [OpenAlexAgent](#openalexagent)
+      - [API Call & Query Handling](#api-call--query-handling)
+      - [Abstract Reconstruction](#abstract-reconstruction)
+      - [Standardization of Results](#standardization-of-results-1)
+      - [Execution Flow](#execution-flow-2)
+    - [MaterialsAgent](#materialsagent)
+      - [API Query & Validation](#api-query--validation)
+      - [Standardization of Material Data](#standardization-of-material-data)
+      - [Execution Flow](#execution-flow-3)
+    - [WebAgent](#webagent)
+      - [DuckDuckGo Search Integration](#duckduckgo-search-integration)
+      - [Standardization of Results](#standardization-of-results-2)
+      - [Execution Flow](#execution-flow-4)
   - [Retrieval & RAG Pipeline](#-retrieval--rag-pipeline)
     - [RetrievalAgent](#-retrievalagent)
     - [RAGAgent](#-ragagent)
@@ -333,6 +358,159 @@ Supervisor-controlled orchestration
 ---
 
 # Detailed overview of each and every agents
+--------------------------------------------
+
+🧰 Tool Agents (tool\_agents.py)
+--------------------------------
+
+This module contains all the **tool-specific agents** used in the LangGraph workflow. Each agent inherits from BaseToolAgent and implements its own retrieval logic while respecting common guardrails.
+
+### BaseToolAgent
+
+#### Common Guardrails & Methods
+
+The BaseToolAgent is the **abstract base class** for all tool agents. It provides:
+
+*   **Tool activation check**: \_should\_run() ensures the tool is in active\_tools and has valid input.
+    
+*   **Query retrieval**: \_get\_query\_data() fetches tiered queries for the agent.
+    
+*   **Tool key extraction**: \_get\_tool\_key() returns the standardized key from agent\_id.
+    
+*   **Execution interface**: Subclasses must implement execute(state).
+    
+
+**Inputs (from ResearchState)**:
+
+*   active\_tools: list of enabled tools
+    
+*   tiered\_queries: dictionary of search queries per tool
+    
+*   api\_search\_term: used for materials queries
+    
+
+**Outputs (to ResearchState)**:
+
+*   None directly; subclasses append data to raw\_tool\_data and references.
+    
+
+### PubMedAgent
+
+#### Tiered Search
+
+Executes PubMed searches using **strict → moderate → broad** tiers, stopping once relevant results are found. Uses Entrez email for API access.
+
+#### Metadata Fetch & URL Construction
+
+*   Fetches abstracts and metadata for retrieved PMIDs.
+    
+*   Constructs reliable **PubMed URLs** for each article: https://pubmed.ncbi.nlm.nih.gov/{pmid}/.
+    
+
+#### Execution Flow
+
+1.  Checks \_should\_run() guardrails.
+    
+2.  Executes \_execute\_tiered\_search() for available queries.
+    
+3.  Fetches metadata via \_fetch\_metadata\_for\_pmids().
+    
+4.  Appends standardized entries to raw\_tool\_data and references.
+    
+
+**Outputs**:
+
+*   raw\_tool\_data: standardized article text + metadata
+    
+*   references: formatted journal article strings
+    
+
+### ArxivAgent
+
+#### Time Constraints
+*   Optional filtering based on TIME\_PERIOD from system\_constraints.
+*   Supports last decade filtering.
+    
+
+#### Tiered Search
+*   Uses strict → moderate → broad query order.
+*   Calls \_call\_arxiv\_search() via Arxiv API client.
+    
+
+#### Standardization of Results
+*   Abstracts truncated to 500 characters for snippets. 
+*   Constructs structured metadata including pdf\_url and published year.
+    
+
+#### Execution Flow
+1.  Checks \_should\_run() and prepares tiered queries.
+2.  Applies time filter if available.
+3.  Calls Arxiv API for relevant papers.
+4.  Standardizes results and updates raw\_tool\_data and references.
+    
+
+### OpenAlexAgent
+#### API Call & Query Handling
+*   Calls OpenAlex API using title.search filter.
+*   Requires a polite email (OPENALEX\_EMAIL) for API usage.
+    
+
+#### Abstract Reconstruction
+*   Handles OpenAlex's inverted index format. 
+*   Reconstructs abstracts robustly, handling missing or incomplete indices.
+    
+
+#### Standardization of Results
+*   Builds standardized dictionary for each work: text, metadata (including openalex\_id), and tool ID.
+    
+
+#### Execution Flow
+1.  Checks \_should\_run().
+2.  Retrieves tiered query.
+3.  Calls \_call\_openalex\_api().
+4.  Standardizes results and updates raw\_tool\_data and references.
+    
+
+### MaterialsAgent
+
+#### API Query & Validation
+*   Queries **Materials Project** API via MPRester.
+*   Only runs if api\_search\_term is valid (non-empty, not a constraint string).
+    
+
+#### Standardization of Material Data
+*   Converts raw data into **human-readable entries** with:
+    *   Stability status   
+    *   Band gap (LaTeX formatted)
+    *   Energy above hull (LaTeX formatted)
+        
+
+#### Execution Flow
+1.  Checks \_should\_run(). 
+2.  Calls \_call\_materials\_project\_api() with target formula.
+3.  Standardizes results via \_standardize\_mp\_results().
+4.  Updates raw\_tool\_data and references.
+    
+
+### WebAgent
+
+#### DuckDuckGo Search Integration
+*   Uses DDGS() client for web search.
+*   Selects tiered query (simple → broad) or falls back to semantic\_query.
+    
+#### Standardization of Results
+*   Converts search results to structured dictionaries containing:
+    *   Text snippet
+    *   URL
+    *   Source metadata
+        
+#### Execution Flow
+1.  Checks \_should\_run().
+2.  Performs DuckDuckGo search via \_call\_ddg\_search().
+3.  Standardizes results and updates raw\_tool\_data and references.
+4.  Warns if no results are found.
+   
+---
 
 ## 📚 Retrieval & RAG Pipeline
 
