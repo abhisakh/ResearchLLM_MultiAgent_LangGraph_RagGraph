@@ -220,20 +220,21 @@ Each node in the graph is an agent that performs a single responsibility:
 ## 🚦 Routing & Control Logic
 
 The graph uses conditional edges (routers) to dynamically control execution.
-**route_from_supervisor**
+Few important functions which were utilized inside the LangGraph assembly code block, are provided blow:
+1. **route_from_supervisor**
 Determines where execution begins or resumes.
 - Reads state["next_node"]
 - Routes to:
   1. clean_query_agent (fresh run)
   2. rag_filter (refinement loop)
 
-**route_to_tools**
+2. **route_to_tools**
 Determines which tool to start with after query generation.
 - Reads state["active_tools"]
 - Returns the first eligible tool node
 - Only one tool is selected at this stage
 
-**route_next_tool** (Tool Loop Controller)
+3. **route_next_tool** (Tool Loop Controller)
 - Controls sequential tool execution.
 - Receives:(input arguments)
   - The tool that just executed
@@ -250,7 +251,7 @@ pubmed → arxiv → openalex → materials → web
   - No repeated tools
   - No infinite loops
     
-#### Why Lambdas Are Used
+#### Why Lambdas Are Used (inside the route_next_tool function)
 LangGraph routers only receive state.
 They do not receive information about which node just ran.
 Each tool node therefore uses a lambda to ***bind its identity***:
@@ -259,7 +260,7 @@ lambda state, key=tool_key: route_next_tool(key, state)
 ```
 This allows route_next_tool to know which tool just executed.
 
-**route_after_evaluation**
+4. **route_after_evaluation**
 Determines whether the workflow should:
 - End execution, or Loop back to the Supervisor for refinement
 - Decision is based on state["needs_refinement"].
