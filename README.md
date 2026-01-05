@@ -776,10 +776,17 @@ Performs general web search using DuckDuckGo for supplemental information.
 
 This project uses a two-stage Retrieval-Augmented Generation (RAG) pipeline designed to be model-agnostic, scalable, and robust to heterogeneous data sources.
 The pipeline consists of:
-- RetrievalAgent – document downloading, text extraction, and semantic chunking
-- RAGAgent – vector search, **contextual expansion**, filtering, and final context assembly
+- 📥 **RetrievalAgent** – document downloading, text extraction, and semantic chunking
+  The bridge between metadata and full text.
+  - **PDF Worker:** Identifies pdf_url or PubMed links to download full papers.
+  - **Semantic Chunking:** Breaks text into overlapping segments, ensuring that a paragraph describing a "Synthesis Method" isn't cut in half.
+  - 
+- 🔎 **RAGAgent**(The filter) – vector search, **contextual expansion**, filtering, and final context assembly
+  - **Vector DB:** Uses FAISS to index all chunks.
+  - **Neighbor Expansion:** A standout feature. When a relevant chunk is found, the agent retrieves the chunk immediately before and after   it to provide the LLM with the full surrounding context.
+  - **Keyword Gating:** Filters out academic boilerplate (e.g., "References", "Conflict of Interest") to save token space.
 
-### 🔹 RetrievalAgent
+### 📥 RetrievalAgent
 **Purpose**
 The RetrievalAgent is responsible for converting raw tool outputs (PDFs, abstracts, snippets) into structured, semantically meaningful text chunks suitable for vector-based retrieval.
 
@@ -927,7 +934,7 @@ The RAGAgent filters and compresses retrieved content into a high-signal context
 
 ---
 
-## 🧠 SynthesisAgent
+## ✍️ SynthesisAgent
 
 The SynthesisAgent is responsible for generating the final scientific research report from the filtered RAG context and structured tool outputs.
 It supports both initial report generation and refinement rewrites, driven entirely by state flags set earlier in the workflow.
