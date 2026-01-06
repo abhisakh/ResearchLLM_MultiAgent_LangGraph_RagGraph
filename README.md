@@ -127,8 +127,155 @@
 
 
 ---
-# 🔬 Advanced Multi-Agent Research Framework
+# 🛰️ 1. The Request Journey: Frontend to Backend
+The system operates using a Decoupled Architecture, where the user interface and the processing engine communicate over a network via the FastAPI Gateway.
+
+### Step 1: User Submission
+- The process begins in the Streamlit UI. When a research query is submitted:
+- The UI captures the plain-text string and a unique session_id.
+- The UI sends a synchronous HTTP POST request to the /research-chat endpoint of the backend.
+- The request body is a JSON payload structured according to the Query Pydantic model.
+
+### Step 2: State Initialization
+Upon receiving the request, the FastAPI Backend performs the following operations:
+- **Vector Database Purge:** It triggers db_wrapper.reset_db() to ensure semantic memory is fresh for the new query.
+- **ResearchState Assembly:** It creates a Python dictionary matching the ResearchState schema. At this exact moment, the user_query from the frontend is injected into the state, and all other fields (like execution_plan and system_constraints) are initialized as empty placeholders.
+
+## 🔄 2. Data Flow & Database Trigger Points
+The system follows a "Log-before-Respond" pattern to ensure data integrity. The database is triggered at three distinct points in the lifecycle:
+**Sequence of Operations**
+| Timing         | Operation      | Target        | Purpose                                                       |
+| -------------- | -------------- | ------------- | ------------------------------------------------------------- |
+| Immediate      | log_to_db()    | chat_logs     | Records the User Query before processing begins.              |
+| Intermediate   | graph.invoke() | ResearchState | The graph executes. State is updated in memory across agents. |
+| Post-Execution | log_to_db()    | chat_logs     | Records the Final Report and the full State Payload.          |
+| Final          | Response()     | Streamlit UI  | The cleaned JSON is sent back to the frontend for display.    |
+
+## 🏛️ 3. Execution Architecture Diagram
+The following diagram illustrates the "Inter-component Handshake." It clarifies that the Database is not a passive storage unit but an active auditor that captures the state at both the beginning and end of the research cycle.
+
+```mermaid
+sequenceDiagram
+    participant UI as Streamlit Frontend
+    participant API as FastAPI Backend
+    participant VDB as Vector Database
+    participant SQL as SQLite (chat_history.db)
+    participant LG as LangGraph Engine
+
+    UI->>API: POST /research-chat (User Query)
+    
+    rect rgb(240, 240, 240)
+    Note over API, SQL: [Point 1: User Logging]
+    API->>SQL: log_to_db (Role: User)
+    end
+
+    API->>VDB: reset_db()
+    API->>LG: invoke(InitialState)
+    
+    loop Research Process
+        LG->>LG: Agents update ResearchState keys
+    end
+
+    LG-->>API: Final ResearchState
+    
+    rect rgb(240, 240, 240)
+    Note over API, SQL: [Point 2: Agent Logging]
+    API->>SQL: log_to_db (Role: Agent, State Payload)
+    end
+
+    API->>UI: Return Final Report JSON
+```
+
+## 📝 4. Key Design Principles
+- **Memory vs. Persistence:** The ResearchState is short-term memory (volatile); it only exists while the agents are working. The chat_logs table is long-term memory (persistent); it stores the result of that work.
+- **Synchronous Response:** The data is stored in the database before the user sees it in the frontend. This ensures that even if the network connection drops during the response transmission, a record of the research remains.
+- **State Cleansing:** Before the data is returned to the UI or stored in the DB, it undergoes a recursive "cleansing" to remove problematic characters that might crash the database or the browser's JSON parser.
+
+
 ---
+
+# 🏗️ Backend Architecture
+
+The **backend.py** module acts as the interface between the asynchronous web world and the deterministic state machine of the Research Agent. It manages the lifecycle of each research session, ensuring that state is initialized, executed, cleansed, and persisted.
+
+## 🧬 High-Level Component Flow
+The following Mermaid diagram illustrates the request-response lifecycle, showing how the FastAPI endpoint interacts with the ThreadPool, the Vector Database, and the SQLite history log.
+
+```mermaid
+graph TD
+    %% Entry Points
+    User((User/Frontend)) -->|POST /research-chat| API[FastAPI Endpoint]
+    
+    %% Initialization Phase
+    subgraph Initialization
+        API -->|1. Reset| VDB[(Vector DB Wrapper)]
+        API -->|2. Create| State[Initial ResearchState]
+    end
+    
+    %% Execution Phase
+    subgraph Execution_Engine
+        State -->|3. Offload| TP[ThreadPoolExecutor]
+        TP -->|4. Invoke| LG{LangGraph App}
+        LG -->|Nodes/Edges| LG
+    end
+    
+    %% Persistence & Safety
+    subgraph Persistence_Layer
+        LG -->|5. Result| Clean[Recursive Cleanser]
+        Clean -->|6. Log| SQL[(SQLite: chat_logs)]
+    end
+    
+    %% Final Output
+    SQL -->|7. Return| API
+    API -->|JSON Response| User
+
+    %% Styling
+    style LG fill:#f96,stroke:#333,stroke-width:2px
+    style SQL fill:#69f,stroke:#333
+    style VDB fill:#6f9,stroke:#333
+
+```
+## 🗄️ Database Schema: chat_history.db
+The backend uses SQLAlchemy to manage session persistence. This is critical for building frontends that allow users to return to previous research sessions.
+**Table: chat_logs**
+This table records every "turn" in the conversation, including hidden metadata from the agents.
+| Column     | Type     | Description                                                         |
+| ---------- | -------- | ------------------------------------------------------------------- |
+| id         | String   | Primary Key (UUID v4).                                              |
+| session_id | String   | Unique ID for the specific research task.                           |
+| timestamp  | DateTime | UTC time of entry.                                                  |
+| role       | String   | user, agent, or agent_error.                                        |
+| message    | Text     | The plain-text output (Query or Final Report).                      |
+| tool_used  | String   | The specific agent that produced the result (e.g., SynthesisAgent). |
+| raw_data   | Text     | Crucial: Stringified JSON of the final ResearchState.               |
+
+## 🛠️ Key Backend Functions
+### 1. Startup & Initialization
+The @app.on_event("startup") handler ensures that the ResearchGraph is compiled only once. This pre-compilation is what allows the agentic transitions to happen with minimal latency.
+
+### 2. The Ultimate Cleanser (_cleanse_recursive_state)
+Because the agent scrapes web data (which can contain non-standard UTF-8 characters), the backend performs a recursive sanitization.
+Regex Filtering: It removes surrogate pairs (\ud800-\udfff) that would otherwise crash the SQLite JSON serializer or the frontend's JSON.parse().
+
+**Deep Crawl:** It travels through every list and dictionary in the ResearchState to ensure safety at every depth.
+
+### 3. Thread Management
+Since LangGraph's .invoke() is a synchronous, CPU-bound task in our current setup, the backend uses a ThreadPoolExecutor with max_workers=2. This prevents a single long-running research query from "hanging" the entire API for other health-check or history requests.
+
+## 🚦 API Endpoints Summary
+- **POST /research-chat:** The primary execution engine. It takes a message, generates a session_id, and triggers the full graph.
+
+- **GET /chat-history/{session_id}:** Retrieves all logs for a specific research task, allowing for a "Slack-like" message history view.
+
+- **GET /list-sessions:** Provides a summary of all research tasks stored in the DB, including a 100-character preview of the last message.
+
+- **GET /graph-visualization:** Serves a PNG representation of the compiled graph, useful for debugging the path from supervisor to evaluation.
+
+
+---
+
+# 🔬 Advanced Multi-Agent Research Framework (Agent Logic Documentation)
+
 This framework implements a state-driven, autonomous research pipeline using LangGraph. It coordinates specialized agents to perform deep-dive scientific literature reviews, material property analysis, and factual synthesis with an integrated evaluation-refinement loop.
 
 ## 🗺️ System Architecture
