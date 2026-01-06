@@ -116,11 +116,11 @@
     - [Failure Handling](#failure-handling-1)
     - [Debug & Logging](#debug--logging)
 
-- [Main Loop Execution &  Management](#main-loop-execution-&-management)
+- [Main Loop Execution &  Management](#main-loop-execution--management)
 
 
 ---
-# 🔬 Advanced Multi-Agent Research Framework
+# 🔬 Advanced Multi-Agent Research Framework {#advanced-multi-agent-research-framework}
 ---
 This framework implements a state-driven, autonomous research pipeline using LangGraph. It coordinates specialized agents to perform deep-dive scientific literature reviews, material property analysis, and factual synthesis with an integrated evaluation-refinement loop.
 
