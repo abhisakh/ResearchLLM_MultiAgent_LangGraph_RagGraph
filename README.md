@@ -1196,4 +1196,36 @@ class EvaluationSchema(BaseModel):
 
 ```
 
+## 🚀 Main Loop Execution &  Management
+The execution layer is responsible for initializing the environment, defining the starting state, and managing the LangGraph stream. It specifically handles the logic for the Refinement Loop, ensuring that if a report is rejected by the EvaluationAgent, the system re-runs the RAG and Synthesis phases with improved context.
+
+### ⚙️ 1. Session Initialization
+Before any agents run, the initialize_research_session function prepares the environment:
+- **VectorDB Reset:** Calls vector_db.reset_db() to ensure that data from previous queries doesn't "pollute" the current research session.
+- **Graph Compilation:** Passes the VectorDBWrapper instance into the ResearchGraph class to compile the LangGraph workflow.
+
+### 💾 2. The Initial State (The Research Blueprint)
+The initial_state dictionary is the starting point for the ResearchState. It initializes all 19 keys, providing a structured schema for the agents to populate.
+- **Transient Fields:** Fields like raw_tool_data and full_text_chunks are initialized empty.
+- **Refinement Flags:** is_refining starts as False, signaling to the SupervisorAgent to follow the clean_query_agent path.
+
+### 🔁 3. The Stream & Refinement Loop
+The core of the execution logic is the research_graph.graph.stream() loop. This is where the Python execution environment interacts with the LangGraph state machine.
+#### 🧪 Refinement Logic (Iteration Management)
+The code implements a Maximum Iteration Guard (max_iterations = 2). This prevents infinite loops while allowing the system to improve its output once.
+1. **Evaluation Interception:** The loop listens for the 'evaluation' node output.
+2. **Refinement Trigger:** If needs_refinement is True and we are under the iteration limit:
+  - **State Transformation:** The system takes the final_state and resets specific keys (raw_tool_data, full_text_chunks, references).
+  - **Routing Override:** It sets is_refining = True and forces next = 'rag_filter'.
+  - **Supervisor Hand-off:** When the loop restarts, the SupervisorAgent sees these updated flags and directs the flow back into the RAG pipeline rather than restarting the entire search.
+
+#### 🚦 Node Monitoring
+The stream provides real-time visibility into the agentic workflow. Each successful node execution is printed to the console using color-coded identifiers (>> [NODE] Executed ...), allowing for transparent debugging of the multi-agent sequence.
+
+#### 📊 4. Reporting & Output
+Once the graph reaches __end__ or the max iterations are hit, the system calculates the total execution time and prints the final_report.
+  - **Dynamic Header:** It identifies if the report is INITIAL or REFINED based on the iteration count.
+  - **Duration Tracking:** Monitors performance, crucial for optimizing the latency of multi-step RAG pipelines.
+
+
 
