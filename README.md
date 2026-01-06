@@ -24,6 +24,7 @@
 
 
 ## 📖 Contents
+- [Advanced Multi-Agent Research Framework](#-advanced-multi-agent-research-framework)
   - [System Architecture](#-system-architecture)
   - [High-Level Execution Flow](#-high-level-execution-flow)
     
