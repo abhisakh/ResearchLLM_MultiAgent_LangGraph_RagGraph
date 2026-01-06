@@ -1228,5 +1228,15 @@ Once the graph reaches __end__ or the max iterations are hit, the system calcula
   - **Dynamic Header:** It identifies if the report is INITIAL or REFINED based on the iteration count.
   - **Duration Tracking:** Monitors performance, crucial for optimizing the latency of multi-step RAG pipelines.
 
+### ✅ Summary of the Main Logic
+
+| Component        | Responsibility                                                 |
+| ---------------- | -------------------------------------------------------------- |
+| VectorDBWrapper  | Ensures semantic memory is clean for every new query.          |
+| graph.stream()   | Asynchronously executes nodes while maintaining state.         |
+| max_iterations   | Provides a safety cutoff for autonomous refinement.            |
+| is_refining Flag | Switches agent prompts from "Generation" to "Correction" mode. |
+
+
 
 
