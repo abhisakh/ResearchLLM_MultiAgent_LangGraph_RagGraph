@@ -194,10 +194,10 @@ The state is logically grouped into six categories:
 
 **6️⃣ Control & Routing**
 
-| Field         | Type   | Description                        |
-| ------------- | ------ | ---------------------------------- |
-| `is_refining` | `bool` | Indicates refinement loop          |
-| `next`        | `str`  | Routing key used by the Supervisor |
+| Field         | Type   | Description                                                |
+| ------------- | ------ | ---------------------------------------------------------- |
+| `is_refining` | `bool` | Indicates refinement loop                                  |
+| `next`        | `str`  | Routing key used by the Supervisor. It acts like a compass.|
 
 
 ### 🔁 State Lifecycle
