@@ -24,7 +24,7 @@
 
 
 ## 📖 Contents
-- [System Architecture](#-system-architecture)
+  - [System Architecture](#-system-architecture)
   - [High-Level Execution Flow](#-high-level-execution-flow)
     
 - [ResearchState (Shared Workflow State)](#-researchstate-shared-workflow-state)
