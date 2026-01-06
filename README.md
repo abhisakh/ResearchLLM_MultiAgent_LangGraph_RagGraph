@@ -115,7 +115,7 @@
     - [Failure Handling](#failure-handling-1)
     - [Debug & Logging](#debug--logging)
 
-
+- [Main Loop Execution &  Management](#-main-loop-execution-&-management)
 
 
 ---
