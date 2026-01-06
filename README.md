@@ -116,7 +116,14 @@
     - [Failure Handling](#failure-handling-1)
     - [Debug & Logging](#debug--logging)
 
-  - [Main Loop Execution & Management](#-main-loop-execution--management)
+  - [Main Loop Execution & Management](#main-loop-execution--management)
+  - [1. Session Initialization](#1-session-initialization)
+  - [2. The Initial State (The Research Blueprint)](#2-the-initial-state-the-research-blueprint)
+  - [3. The Stream & Refinement Loop](#3-the-stream--refinement-loop)
+    - [Refinement Logic (Iteration Management)](#refinement-logic-iteration-management)
+    - [Node Monitoring](#node-monitoring)
+    - [Reporting & Output](#reporting--output)
+  - [Summary of the Main Logic](#summary-of-the-main-logic)
 
 
 ---
@@ -1196,6 +1203,7 @@ class EvaluationSchema(BaseModel):
     )
 
 ```
+---
 
 ## 🚀 Main Loop Execution &  Management
 The execution layer is responsible for initializing the environment, defining the starting state, and managing the LangGraph stream. It specifically handles the logic for the Refinement Loop, ensuring that if a report is rejected by the EvaluationAgent, the system re-runs the RAG and Synthesis phases with improved context.
