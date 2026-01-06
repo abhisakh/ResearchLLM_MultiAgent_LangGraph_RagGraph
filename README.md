@@ -120,7 +120,7 @@
 
 
 ---
-# 🔬 Advanced Multi-Agent Research Framework {#advanced-multi-agent-research-framework}
+# 🔬 Advanced Multi-Agent Research Framework
 ---
 This framework implements a state-driven, autonomous research pipeline using LangGraph. It coordinates specialized agents to perform deep-dive scientific literature reviews, material property analysis, and factual synthesis with an integrated evaluation-refinement loop.
 
