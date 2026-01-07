@@ -23,7 +23,14 @@
 ---
 
 ## 📖 Table of Contents
-
+- [Architecture Overview](#architecture-overview)
+- [Frontend Interface](#-frontend-interface-streamlit-ui)
+  - [UI Architecture & Design Philosophy](#-ui-architecture--design-philosophy)
+  - [Layout System](#-layout-system)
+  - [Component Breakdown](#-component-breakdown)
+  - [State Management](#-state-management)
+  - [API Integration](#-api-integration)
+  - [Styling System](#-styling-system)
 - [The Request Journey: Frontend to Backend](#-the-request-journey-frontend-to-backend)
   - [Data Flow & Database Trigger Points](#-data-flow--database-trigger-points)
   - [Execution Architecture Diagram](#-execution-architecture-diagram)
@@ -59,6 +66,653 @@
   - [The Initial State](#-2-the-initial-state-the-research-blueprint)
   - [The Stream & Refinement Loop](#-3-the-stream--refinement-loop)
   - [Summary of Main Logic](#-summary-of-the-main-logic)
+---
+# Architecture Overview
+
+This system consists of three major layers:
+
+1. **Frontend Layer** - Streamlit-based UI with fixed layout architecture
+2. **Backend Layer** - FastAPI gateway managing state and persistence
+3. **Agent Layer** - LangGraph-orchestrated multi-agent research pipeline
+
+---
+
+# 🎨 Frontend Interface (Streamlit UI)
+
+**File:** `main_ui.py`
+
+The frontend is a production-grade Streamlit application designed with a **fixed-position architecture** and **military-grade visual hierarchy**. It provides real-time interaction with the multi-agent research system while maintaining complete visual stability across all user interactions.
+
+## 🏗️ UI Architecture & Design Philosophy
+
+### Core Design Principles
+
+1. **Fixed Layout Architecture** - No layout shift during scrolling or content updates
+2. **Visual Hierarchy** - 25% fixed header, sticky sidebars, scrollable center panel
+3. **Mission Control Aesthetic** - Dark theme with cyan accents mimicking command center interfaces
+4. **Real-time Feedback** - Live status updates during agent execution
+5. **Session Persistence** - Complete session management and historical data access
+
+### Visual Design Language
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  FIXED HEADER (25vh) - Logo + Title + System Protocol  │
+├─────────┬───────────────────────────────────┬───────────┤
+│  LEFT   │      MIDDLE (Scrollable)          │   RIGHT   │
+│ SIDEBAR │    Research Log & Chat            │  SIDEBAR  │
+│ (Fixed) │    - Message History               │  (Fixed)  │
+│         │    - Agent Responses               │          │
+│ Mission │    - JSON Data Display             │  Logic   │
+│  Ops    │    - Input Field                   │  Engine  │
+│         │                                     │          │
+│ 23vw    │           52vw                     │   23vw   │
+└─────────┴───────────────────────────────────┴───────────┘
+```
+
+## 📐 Layout System
+
+### 1. Fixed Header (25% Viewport Height)
+
+The header is **position: fixed** and spans the entire viewport width, containing:
+
+- **Logo Image** - `450px × 200px` with rounded borders and cyan accent
+- **Title Text** - `48px` bold, uppercase, cyan-colored
+- **System Protocol Banner** - Monospace font showing operational status
+
+```python
+# Header HTML Structure
+<div class="fixed-header">
+    <img class="header-logo" src="data:image/jpg;base64,{img_base64}">
+    <div style="text-align: left;">
+        <h1 class="header-title">Research Assistant LLM</h1>
+        <p style="color: #98D8C8; opacity: 0.6;">
+            SYSTEM PROTOCOL: ACTIVE // ARCHITECTURE: MULTI-AGENT SYNTHESIS
+        </p>
+    </div>
+</div>
+```
+
+### 2. Three-Column Layout (75% Viewport Height)
+
+The main content area uses Streamlit's native column system with **CSS position overrides**:
+
+```python
+col_left, col_middle, col_right = st.columns([1, 2, 1])
+```
+
+**Column Specifications:**
+
+| Column | Width | Position | Scroll | Purpose |
+|--------|-------|----------|--------|---------|
+| Left   | 23vw  | Fixed    | No     | Mission Operations & Session Management |
+| Middle | 52vw  | Relative | Yes    | Research Log, Chat Interface, Responses |
+| Right  | 23vw  | Fixed    | No     | Logic Engine Visualization |
+
+### 3. CSS Position Hacks for Sticky Columns
+
+The system uses aggressive CSS targeting to override Streamlit's default behavior:
+
+```css
+/* LEFT COLUMN: FIXED POSITION */
+[data-testid="column"]:nth-child(1) {
+    position: fixed !important;
+    width: 23vw !important;
+    left: 2vw;
+    height: 75vh !important;
+    z-index: 10;
+}
+
+/* RIGHT COLUMN: FIXED POSITION */
+[data-testid="column"]:nth-child(3) {
+    position: fixed !important;
+    width: 23vw !important;
+    right: 2vw;
+    height: 75vh !important;
+    z-index: 10;
+}
+
+/* MIDDLE COLUMN: THE ONLY SCROLLABLE AREA */
+[data-testid="column"]:nth-child(2) {
+    margin-left: 25vw !important;
+    margin-right: 25vw !important;
+    height: 75vh !important;
+    overflow-y: auto !important;
+}
+```
+
+## 🧩 Component Breakdown
+
+### Left Sidebar: Mission Operations
+
+**Purpose:** Session management and historical data navigation
+
+**Components:**
+
+1. **Session ID Display**
+   ```python
+   st.code(f"ID: {st.session_state['session_id'][:12]}", language="bash")
+   ```
+   - Shows truncated UUID of current session
+   - Monospace font for technical aesthetic
+
+2. **New Mission Button**
+   ```python
+   if st.button("🚀 INITIATE NEW MISSION", use_container_width=True):
+       st.session_state['session_id'] = str(uuid.uuid4())
+       st.session_state['messages'] = []
+       st.rerun()
+   ```
+   - Generates new UUID
+   - Clears message history
+   - Triggers full UI refresh
+
+3. **Session Archive Browser**
+   ```python
+   sessions = fetch_session_list()
+   if sessions:
+       selected = st.selectbox("Historical Streams", options=sessions)
+       if st.button("RESTORE DATA", use_container_width=True):
+           st.session_state['session_id'] = selected
+           fetch_history(selected)
+           st.rerun()
+   ```
+   - Fetches all past sessions from backend
+   - Allows selection and restoration
+   - Loads full message history on restore
+
+### Middle Panel: Research Log
+
+**Purpose:** Primary interaction area for queries and responses
+
+**Components:**
+
+1. **Message History Display**
+   ```python
+   for msg in st.session_state['messages']:
+       with st.chat_message(msg["role"]):
+           st.markdown(msg["content"])
+   ```
+   - Iterates through session message list
+   - Uses native Streamlit chat bubbles
+   - Differentiates user/assistant roles
+
+2. **Query Input Field**
+   ```python
+   if prompt := st.chat_input("Input coordinates..."):
+       st.chat_message("user").markdown(prompt)
+       st.session_state['messages'].append({"role": "user", "content": prompt})
+   ```
+   - Bottom-anchored input field
+   - Walrus operator for immediate capture
+   - Appends to session state before API call
+
+3. **Real-time Response Handler**
+   ```python
+   with st.chat_message("assistant"):
+       status = st.empty()
+       status.markdown("📡 *Synthesizing...*")
+       
+       res = requests.post(f"{API_BASE_URL}/research-chat",
+                           json={"session_id": st.session_state['session_id'], 
+                                 "message": prompt})
+       data = res.json()
+       msg = data.get('response', 'Error.')
+       
+       # Append JSON data if available
+       if data.get('raw_data') and data.get('raw_data') != "No tool data available":
+           msg += f"\n\n---\n**📊 Data:**\n```json\n{safe_json_format(data.get('raw_data'))}\n```"
+       
+       status.markdown(msg)
+       st.session_state['messages'].append({"role": "assistant", "content": msg})
+   ```
+   
+   **Execution Flow:**
+   - Creates placeholder for live updates
+   - Shows "Synthesizing" status during API call
+   - Appends structured JSON data if present
+   - Updates placeholder with final response
+   - Persists to session state
+
+### Right Sidebar: Logic Engine
+
+**Purpose:** Visual representation of the agent graph and routing logic
+
+**Components:**
+
+1. **Graph Visualization**
+   ```python
+   response = requests.get(f"{API_BASE_URL}/graph-visualization")
+   if response.status_code == 200:
+       viz_data = response.json()
+       st.image(viz_data.get("image_url"), use_container_width=True)
+   ```
+   - Fetches PNG graph from backend
+   - Displays compiled LangGraph structure
+   - Auto-scales to container width
+
+2. **Mermaid Code Viewer**
+   ```python
+   with st.expander("🔬 View Routing Protocol"):
+       st.code(viz_data.get("mermaid_syntax"), language="mermaid")
+   ```
+   - Collapsible expander for technical details
+   - Shows raw Mermaid syntax
+   - Useful for debugging routing logic
+
+## 🔄 State Management
+
+### Session State Schema
+
+The frontend maintains a minimal but complete state:
+
+```python
+st.session_state = {
+    'session_id': str,      # UUID v4 identifier
+    'messages': List[Dict]  # Chat history
+}
+```
+
+**State Initialization:**
+```python
+if 'session_id' not in st.session_state: 
+    st.session_state['session_id'] = str(uuid.uuid4())
+if 'messages' not in st.session_state: 
+    st.session_state['messages'] = []
+```
+
+### Message Structure
+
+Each message in the history follows this schema:
+
+```python
+{
+    "role": "user" | "assistant",
+    "content": str  # Markdown-formatted text
+}
+```
+
+### State Persistence Strategy
+
+- **In-Memory:** All active session data lives in `st.session_state`
+- **Backend Sync:** Every query/response pair is logged to SQLite via backend
+- **Restoration:** Historical sessions are fetched via `/chat-history/{session_id}`
+
+## 🔌 API Integration
+
+### Backend Connection Configuration
+
+```python
+API_BASE_URL = "http://localhost:8000"
+```
+
+### API Client Functions
+
+#### 1. Fetch Session History
+
+```python
+def fetch_history(session_id: str):
+    try:
+        res = requests.get(f"{API_BASE_URL}/chat-history/{session_id}")
+        if res.status_code == 200:
+            history = res.json()
+            st.session_state['messages'] = [
+                {"role": ("user" if e['role'] == 'user' else "assistant"), 
+                 "content": e.get('message', '')}
+                for e in history
+            ]
+            return True
+    except: 
+        return False
+```
+
+**Purpose:** Reconstructs message history from database
+
+**Flow:**
+1. GET request to backend with session ID
+2. Parses JSON response
+3. Transforms database format to UI format
+4. Overwrites `st.session_state['messages']`
+
+#### 2. Fetch Session List
+
+```python
+def fetch_session_list():
+    try:
+        res = requests.get(f"{API_BASE_URL}/list-sessions")
+        return [s['session_id'] for s in res.json()] if res.status_code == 200 else []
+    except: 
+        return []
+```
+
+**Purpose:** Retrieves all available session IDs for archive browser
+
+**Returns:** List of UUID strings
+
+#### 3. Submit Research Query
+
+```python
+res = requests.post(
+    f"{API_BASE_URL}/research-chat",
+    json={
+        "session_id": st.session_state['session_id'], 
+        "message": prompt
+    }
+)
+data = res.json()
+```
+
+**Request Payload:**
+```json
+{
+    "session_id": "uuid-string",
+    "message": "user query text"
+}
+```
+
+**Response Schema:**
+```json
+{
+    "response": "final_report markdown",
+    "raw_data": "stringified JSON or null",
+    "session_id": "uuid-string"
+}
+```
+
+## 🎨 Styling System
+
+### Design Tokens
+
+```css
+/* Color Palette */
+--bg-primary: #0B0E14      /* Main background */
+--bg-secondary: #0D1117    /* Header background */
+--bg-tertiary: #161B22     /* Chat bubbles */
+--border-primary: #30363d  /* Dividers */
+--accent-cyan: #98D8C8     /* Primary accent */
+
+/* Typography */
+--font-primary: 'Inter', sans-serif
+--font-mono: 'JetBrains Mono', monospace
+```
+
+### Critical CSS Patterns
+
+#### 1. Scroll Lock & Overflow Control
+
+```css
+.stApp {
+    background-color: #0B0E14 !important;
+    overflow: hidden !important;  /* Prevents body scroll */
+    height: 100vh;
+}
+```
+
+**Rationale:** Only the middle column should scroll; this prevents double scrollbars
+
+#### 2. Header Removal
+
+```css
+header[data-testid="stHeader"], 
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+```
+
+**Rationale:** Removes default Streamlit header to implement custom fixed header
+
+#### 3. Typography Scaling
+
+```css
+[data-testid="stChatMessage"] p {
+    font-size: 1.2rem !important;
+    line-height: 1.6 !important;
+}
+
+[data-testid="stMarkdownContainer"] h3 {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    color: #98D8C8 !important;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+```
+
+**Rationale:** Ensures readability at typical viewing distances; matches command center aesthetic
+
+#### 4. Custom Scrollbar
+
+```css
+[data-testid="column"]:nth-child(2)::-webkit-scrollbar {
+    width: 6px;
+}
+
+[data-testid="column"]:nth-child(2)::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 10px;
+}
+```
+
+**Rationale:** Subtle, non-intrusive scrollbar that matches dark theme
+
+### Button Styling
+
+```css
+.stButton>button {
+    background-color: #98D8C8 !important;
+    color: #0B0E14 !important;
+    font-weight: 700 !important;
+    height: 3em;
+    font-size: 1.1rem !important;
+}
+```
+
+**Design Choice:** High-contrast cyan-on-dark creates clear call-to-action
+
+## 🛠️ Utility Functions
+
+### 1. Base64 Image Encoder
+
+```python
+def get_base64_of_bin_file(bin_file):
+    if os.path.exists(bin_file):
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    return ""
+```
+
+**Purpose:** Converts local `ai.jpg` to base64 for inline embedding
+
+**Usage:**
+```python
+img_base64 = get_base64_of_bin_file("ai.jpg")
+logo_html = f"data:image/jpg;base64,{img_base64}"
+```
+
+**Rationale:** Eliminates external file dependencies; ensures logo displays even if server filesystem changes
+
+### 2. Safe JSON Formatter
+
+```python
+def safe_json_format(data):
+    try:
+        if isinstance(data, str): 
+            data = json.loads(data)
+        return json.dumps(data, indent=2)
+    except: 
+        return str(data)
+```
+
+**Purpose:** Defensive JSON parsing for raw_data display
+
+**Behavior:**
+- Accepts both string and dict inputs
+- Pretty-prints with 2-space indentation
+- Gracefully degrades to `str()` on failure
+
+## 🔄 User Interaction Flow
+
+### Standard Research Query Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Streamlit UI
+    participant State as Session State
+    participant API as FastAPI Backend
+    participant Graph as LangGraph
+
+    User->>UI: Enter query in chat input
+    UI->>State: Append user message
+    UI->>UI: Display user message bubble
+    UI->>UI: Show "Synthesizing..." status
+    UI->>API: POST /research-chat
+    API->>Graph: Invoke research workflow
+    Graph->>Graph: Execute agent pipeline
+    Graph-->>API: Return final report + state
+    API-->>UI: JSON response
+    UI->>State: Append assistant message
+    UI->>UI: Update status with final report
+    UI->>UI: Display JSON data (if present)
+```
+
+### Session Restoration Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Streamlit UI
+    participant State as Session State
+    participant API as FastAPI Backend
+    participant DB as SQLite
+
+    User->>UI: Click "Archive" dropdown
+    UI->>API: GET /list-sessions
+    API->>DB: Query all session IDs
+    DB-->>API: Return session list
+    API-->>UI: JSON array of IDs
+    UI->>UI: Populate dropdown
+    User->>UI: Select session + click "RESTORE DATA"
+    UI->>API: GET /chat-history/{session_id}
+    API->>DB: Query chat_logs by session_id
+    DB-->>API: Return message array
+    API-->>UI: JSON chat history
+    UI->>State: Overwrite messages array
+    UI->>State: Update session_id
+    UI->>UI: Trigger full rerun
+    UI->>UI: Render restored conversation
+```
+
+## 🎯 Key Frontend Features
+
+### 1. Real-time Status Updates
+
+The UI uses Streamlit's `st.empty()` placeholder pattern for live updates:
+
+```python
+status = st.empty()
+status.markdown("📡 *Synthesizing...*")
+# ... API call ...
+status.markdown(final_response)
+```
+
+This creates a smooth, non-flickering update experience.
+
+### 2. Conditional JSON Display
+
+Raw tool data is only shown when meaningful:
+
+```python
+if data.get('raw_data') and data.get('raw_data') != "No tool data available":
+    msg += f"\n\n---\n**📊 Data:**\n```json\n{safe_json_format(data.get('raw_data'))}\n```"
+```
+
+### 3. Graph Visualization Fallback
+
+The right sidebar gracefully handles missing graph data:
+
+```python
+try:
+    # Fetch and display graph
+except:
+    st.info("Waiting for agent telemetry...")
+```
+
+### 4. Session Persistence
+
+Every new session gets a unique UUID, ensuring proper isolation:
+
+```python
+st.session_state['session_id'] = str(uuid.uuid4())
+```
+
+## 🚀 Frontend Deployment Considerations
+
+### Environment Requirements
+
+```bash
+streamlit==1.31.0
+requests==2.31.0
+```
+
+### Configuration
+
+**Streamlit Config (`config.toml`):**
+```toml
+[server]
+headless = true
+port = 8501
+
+[theme]
+base = "dark"
+primaryColor = "#98D8C8"
+```
+
+### Launch Command
+
+```bash
+streamlit run main_ui.py --server.address=0.0.0.0
+```
+
+## 🔧 Customization Guide
+
+### Changing Colors
+
+All colors are defined in the master CSS block. Key variables:
+
+```css
+background-color: #0B0E14  /* Main BG */
+color: #98D8C8             /* Accent color */
+border: 1px solid #30363d  /* Border color */
+```
+
+### Adjusting Layout Proportions
+
+Column widths are controlled by:
+
+```python
+st.columns([1, 2, 1])  # Left:Middle:Right ratio
+```
+
+And CSS width overrides:
+
+```css
+width: 23vw  /* Sidebar width */
+width: 52vw  /* Middle panel width */
+```
+
+### Adding New Sidebar Widgets
+
+Place new components in the `with col_left:` or `with col_right:` blocks:
+
+```python
+with col_left:
+    st.markdown("### New Section")
+    # .....................
+```
+
+---
 
 ---
 
