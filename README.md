@@ -24,7 +24,7 @@
 
 
 ## 📖 Contents
-- [1. The Request Journey: Frontend to Backend](#-1.-the-request-journey:-frontend-to-backend)
+- [1. The Request Journey: Frontend to Backend](#-the-request-journey:-frontend-to-backend)
 - [Advanced Multi-Agent Research Framework](#-advanced-multi-agent-research-framework)
   - [System Architecture](#-system-architecture)
   - [High-Level Execution Flow](#-high-level-execution-flow)
