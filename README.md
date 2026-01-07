@@ -1,6 +1,6 @@
 <div align="center">
 
-  # 🔬 Advanced Multi-Agent Research Framework 
+  # 🔬 Advanced Multi-Agent Research Framework(GEN-AI) 
   ## (🧠 Declarative Research Agent)  
   **Autonomous AI agent for scientific literature discovery**
   
